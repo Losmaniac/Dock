@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glass Dock (web demo)</title>
+    <style>
+      /* Web demo only: a fake wallpaper so the CSS glass layer has something to blur. */
+      html body {
+        background:
+          radial-gradient(circle at 20% 20%, #7c3aed, transparent 50%),
+          radial-gradient(circle at 80% 30%, #06b6d4, transparent 45%),
+          radial-gradient(circle at 50% 90%, #f43f5e, transparent 50%), #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

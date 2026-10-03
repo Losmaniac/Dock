@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.12);
+  --glass-bg-strong: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  --glass-blur: 24px;
+  --glass-saturate: 180%;
+  --radius-dock: 22px;
+  --radius-item: 14px;
+  --accent: #4f8cff;
+  --text: #fff;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  border-radius: var(--radius-dock);
+}
+
+/* Solid fallback: no transparency (low-end GPUs, accessibility). */
+.solid .glass {
+  background: rgba(32, 32, 36, 0.96);
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: rgba(32, 32, 36, 0.92);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .glass {
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+}
