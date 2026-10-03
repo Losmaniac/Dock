@@ -5,7 +5,7 @@ describe("loadConfigFromRaw", () => {
   it("returns defaults on first run without a backup", async () => {
     const backup = vi.fn();
     const cfg = await loadConfigFromRaw(null, backup);
-    expect(cfg.version).toBe(1);
+    expect(cfg.version).toBe(2);
     expect(backup).not.toHaveBeenCalled();
   });
 
@@ -18,20 +18,20 @@ describe("loadConfigFromRaw", () => {
   it("backs up and falls back on schema violations", async () => {
     const backup = vi.fn();
     const cfg = await loadConfigFromRaw(
-      JSON.stringify({ version: 1, dock: { iconSize: 1 } }),
+      JSON.stringify({ version: 2, docks: [{ id: "d", iconSize: 1 }] }),
       backup,
     );
     expect(backup).toHaveBeenCalledOnce();
-    expect(cfg.dock.iconSize).toBe(56);
+    expect(cfg.docks[0]!.iconSize).toBe(56);
   });
 
   it("keeps a valid config untouched", async () => {
     const backup = vi.fn();
     const cfg = await loadConfigFromRaw(
-      JSON.stringify({ version: 1, dock: { iconSize: 64 } }),
+      JSON.stringify({ version: 2, docks: [{ id: "d", iconSize: 64 }] }),
       backup,
     );
-    expect(cfg.dock.iconSize).toBe(64);
+    expect(cfg.docks[0]!.iconSize).toBe(64);
     expect(backup).not.toHaveBeenCalled();
   });
 });

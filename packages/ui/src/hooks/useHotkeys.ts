@@ -3,14 +3,14 @@ import { desiredHotkeys, diffHotkeys } from "../lib/hotkeys";
 import { messageOf, useDock } from "../store/dockStore";
 
 /** Keeps OS-level hotkeys in sync with config. Registration failures are shown, never swallowed. */
-export function useHotkeys(runAction: (id: string, target: string | null) => void) {
+export function useHotkeys(runAction: (id: string, target: string | null) => void, enabled = true) {
   const platform = useDock((s) => s.platform)!;
   const ready = useDock((s) => s.ready);
   const key = useDock((s) => JSON.stringify(desiredHotkeys(s.config.hotkeys, s.config.workspaces)));
   const registered = useRef<Record<string, string>>({});
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !enabled) return;
     const { remove, set } = diffHotkeys(
       registered.current,
       JSON.parse(key) as Record<string, string>,
@@ -25,7 +25,10 @@ export function useHotkeys(runAction: (id: string, target: string | null) => voi
         .then(() => void (registered.current[id] = accel))
         .catch((e) => useDock.getState().report(messageOf(e)));
     }
-  }, [platform, ready, key]);
+  }, [platform, ready, enabled, key]);
 
-  useEffect(() => platform.onHotkey((id) => runAction(id, null)), [platform, runAction]);
+  useEffect(
+    () => (enabled ? platform.onHotkey((id) => runAction(id, null)) : undefined),
+    [platform, runAction, enabled],
+  );
 }

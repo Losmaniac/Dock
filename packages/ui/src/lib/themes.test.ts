@@ -16,14 +16,17 @@ describe("themes", () => {
     }
   });
   it("leaves items, hotkeys and position alone", () => {
-    const base = { ...defaultConfig(), items: [{ id: "s", type: "separator" as const }] };
+    const d0 = defaultConfig();
+    const base = {
+      ...d0,
+      docks: [{ ...d0.docks[0]!, items: [{ id: "s", type: "separator" as const }] }],
+    };
     const out = applyTheme(
       base,
       THEMES.find((t) => t.id === "graphite")!,
     );
-    expect(out.items).toEqual(base.items);
+    expect(out.docks).toEqual(base.docks);
     expect(out.hotkeys).toEqual(base.hotkeys);
-    expect(out.dock).toEqual(base.dock);
   });
   it("only the wallpaper theme turns on wallpaper colors", () => {
     expect(

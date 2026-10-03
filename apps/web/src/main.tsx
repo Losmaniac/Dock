@@ -6,6 +6,6 @@ import "@glass-dock/ui/src/styles/tokens.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App platform={createPlatform()} />
+    <App platform={createPlatform()} dockId={new URLSearchParams(location.search).get("dock")} />
   </StrictMode>,
 );

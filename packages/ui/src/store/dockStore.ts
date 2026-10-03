@@ -1,7 +1,15 @@
 import { create } from "zustand";
-import type { DockConfig, DockItem, MonitorInfo, PathInfo, WindowInfo } from "@glass-dock/shared";
+import type {
+  DockConfig,
+  DockDef,
+  DockItem,
+  MonitorInfo,
+  PathInfo,
+  WindowInfo,
+} from "@glass-dock/shared";
 import { defaultConfig, type WidgetKind } from "@glass-dock/shared";
 import type { PlatformAPI } from "@glass-dock/platform";
+import { currentDock } from "../lib/docks";
 import type { Open } from "../lib/overlay";
 
 export interface Toast {
@@ -13,6 +21,8 @@ interface DockState {
   platform: PlatformAPI | null;
   ready: boolean;
   config: DockConfig;
+  /** Which dock this window shows; null = the main window (first dock). */
+  dockId: string | null;
   windows: WindowInfo[];
   monitors: MonitorInfo[];
   open: Open | null;
@@ -24,8 +34,10 @@ interface DockState {
   setWidgetSize(widget: WidgetKind, size: "compact" | "wide"): void;
   icons: Record<string, string>;
   toasts: Toast[];
-  init(platform: PlatformAPI): () => void;
+  init(platform: PlatformAPI, dockId?: string | null): () => void;
   edit(fn: (draft: DockConfig) => void): void;
+  /** Edit the dock shown by this window. */
+  editDock(fn: (dock: DockDef, draft: DockConfig) => void): void;
   setConfig(cfg: DockConfig): void;
   reorder(ids: string[]): void;
   pinPath(info: PathInfo): void;
@@ -59,6 +71,7 @@ export const useDock = create<DockState>((set, get) => {
     platform: null,
     ready: false,
     config: defaultConfig(),
+    dockId: null,
     windows: [],
     monitors: [],
     open: null,
@@ -68,18 +81,21 @@ export const useDock = create<DockState>((set, get) => {
     icons: {},
     toasts: [],
 
-    init(platform) {
-      set({ platform });
+    init(platform, dockId = null) {
+      set({ platform, dockId });
       let alive = true;
       void platform.loadConfig().then((config) => alive && set({ config, ready: true }));
       void platform.listWindows().then((windows) => alive && set({ windows }));
       void platform.getMonitors().then((monitors) => alive && set({ monitors }));
       const off = platform.onWindowsChanged((windows) => set({ windows }));
       const offMon = platform.onMonitorsChanged((monitors) => set({ monitors }));
+      // Another dock window saved a change: adopt it without saving again (no echo loop).
+      const offCfg = platform.onConfigChanged((config) => alive && set({ config }));
       return () => {
         alive = false;
         off();
         offMon();
+        offCfg();
       };
     },
 
@@ -90,39 +106,44 @@ export const useDock = create<DockState>((set, get) => {
       save();
     },
 
+    editDock(fn) {
+      get().edit((d) => fn(currentDock(d, get().dockId), d));
+    },
+
     setConfig(config) {
       set({ config });
       save();
     },
 
     reorder(ids) {
-      get().edit((d) => {
-        const byId = new Map(d.items.map((i) => [i.id, i]));
-        d.items = ids.map((id) => byId.get(id)).filter((i): i is DockItem => !!i);
+      get().editDock((dock) => {
+        const byId = new Map(dock.items.map((i) => [i.id, i]));
+        dock.items = ids.map((id) => byId.get(id)).filter((i): i is DockItem => !!i);
       });
     },
 
     setWidgetSize(widget, size) {
-      get().edit((d) => {
-        for (const i of d.items) if (i.type === "widget" && i.widget === widget) i.size = size;
+      get().editDock((dock) => {
+        for (const i of dock.items) if (i.type === "widget" && i.widget === widget) i.size = size;
       });
     },
 
     toggleWidget(widget, on) {
-      get().edit((d) => {
-        const has = d.items.some((i) => i.type === "widget" && i.widget === widget);
+      get().editDock((dock) => {
+        const has = dock.items.some((i) => i.type === "widget" && i.widget === widget);
         if (on && !has)
-          d.items.push({ id: uid(), type: "widget", widget, size: "compact", options: {} });
-        if (!on) d.items = d.items.filter((i) => !(i.type === "widget" && i.widget === widget));
+          dock.items.push({ id: uid(), type: "widget", widget, size: "compact", options: {} });
+        if (!on)
+          dock.items = dock.items.filter((i) => !(i.type === "widget" && i.widget === widget));
       });
     },
 
     pinPath(info) {
-      get().edit((d) => {
+      get().editDock((dock) => {
         const lower = info.path.toLowerCase();
-        if (d.items.some((i) => "path" in i && i.path.toLowerCase() === lower)) return;
+        if (dock.items.some((i) => "path" in i && i.path.toLowerCase() === lower)) return;
         if (info.kind === "app") {
-          d.items.push({
+          dock.items.push({
             id: uid(),
             type: "app",
             label: info.label,
@@ -130,14 +151,14 @@ export const useDock = create<DockState>((set, get) => {
             args: info.args,
           });
         } else if (info.kind === "folder") {
-          d.items.push({ id: uid(), type: "folder", label: info.label, path: info.path });
+          dock.items.push({ id: uid(), type: "folder", label: info.label, path: info.path });
         }
       });
     },
 
     pinRunning(label, path, aumid) {
-      get().edit((d) => {
-        d.items.push({
+      get().editDock((dock) => {
+        dock.items.push({
           id: uid(),
           type: "app",
           label,
@@ -149,8 +170,8 @@ export const useDock = create<DockState>((set, get) => {
     },
 
     unpin(id) {
-      get().edit((d) => {
-        d.items = d.items.filter((i) => i.id !== id);
+      get().editDock((dock) => {
+        dock.items = dock.items.filter((i) => i.id !== id);
       });
     },
 
@@ -171,3 +192,6 @@ export const useDock = create<DockState>((set, get) => {
     },
   };
 });
+
+/** The dock shown by this window (the first dock for the main window). */
+export const useCurrentDock = (): DockDef => useDock((s) => currentDock(s.config, s.dockId));

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { findItem } from "../lib/docks";
 import { useDock } from "../store/dockStore";
 import type { WidgetItem } from "./types";
 
@@ -8,12 +9,12 @@ export function useOption(
   key: string,
   fallback = "",
 ): [string, (v: string) => void] {
-  const live = useDock((s) => s.config.items.find((i) => i.id === item.id));
+  const live = useDock((s) => findItem(s.config, item.id));
   const value = live?.type === "widget" ? (live.options[key] ?? fallback) : fallback;
   const set = useCallback(
     (v: string) =>
       useDock.getState().edit((d) => {
-        const it = d.items.find((i) => i.id === item.id);
+        const it = findItem(d, item.id);
         if (it?.type === "widget") it.options[key] = v;
       }),
     [item.id, key],

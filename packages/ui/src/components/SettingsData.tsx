@@ -106,7 +106,7 @@ export function DataRows() {
           onClick={() =>
             useDock
               .getState()
-              .setConfig({ ...defaultConfig(), items: useDock.getState().config.items })
+              .setConfig({ ...defaultConfig(), docks: useDock.getState().config.docks })
           }
         >
           Reset settings

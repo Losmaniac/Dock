@@ -104,7 +104,7 @@ pub fn set_dock_geometry(window: WebviewWindow, geometry: Geometry) -> DockResul
     unsafe {
         SetWindowPos(hwnd, Some(HWND_TOPMOST), r.x, r.y, r.w, r.h, SWP_NOACTIVATE)?;
     }
-    crate::visibility::mark_placed(window.app_handle());
+    crate::visibility::mark_placed(window.app_handle(), window.label());
     Ok(())
 }
 

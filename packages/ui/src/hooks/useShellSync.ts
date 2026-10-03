@@ -16,7 +16,7 @@ export function useEntryIcons(pinned: Entry[], running: Entry[]) {
 }
 
 /** Keeps native window state in sync with UI state: blur, focusability, Escape to close. */
-export function useShellSync(needsKeyboard: boolean, closeOverlay: () => void) {
+export function useShellSync(needsKeyboard: boolean, closeOverlay: () => void, isMain = true) {
   const platform = useDock((s) => s.platform)!;
   const blur = useDock((s) => (s.config.appearance.solid ? "none" : s.config.appearance.blurMode));
 
@@ -24,15 +24,15 @@ export function useShellSync(needsKeyboard: boolean, closeOverlay: () => void) {
     void platform.setBlurMode(blur).catch(() => {});
   }, [platform, blur]);
 
-  const hideTaskbar = useDock((s) => s.config.dock.hideTaskbar);
+  const hideTaskbar = useDock((s) => s.config.system.hideTaskbar);
   const ready = useDock((s) => s.ready);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !isMain) return; // one window owns the taskbar
     platform.setTaskbarHidden(hideTaskbar).catch((e) => {
       useDock.getState().report(messageOf(e));
-      useDock.getState().edit((d) => void (d.dock.hideTaskbar = false));
+      useDock.getState().edit((d) => void (d.system.hideTaskbar = false));
     });
-  }, [platform, ready, hideTaskbar]);
+  }, [platform, ready, isMain, hideTaskbar]);
 
   useEffect(() => {
     void platform.setFocusable(needsKeyboard).catch(() => {});

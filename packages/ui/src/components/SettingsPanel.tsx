@@ -1,7 +1,8 @@
 import { X } from "lucide-react";
-import { useDock } from "../store/dockStore";
+import { useCurrentDock, useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
 import { DataRows, ThemeGallery } from "./SettingsData";
+import { DockRows } from "./SettingsDocks";
 import { HotkeyRows, IntegrationRows, MonitorRows, WidgetRows } from "./SettingsExtras";
 import { WorkspaceRows } from "./SettingsWorkspaces";
 
@@ -17,9 +18,10 @@ export function SettingsPanel({
   close: () => void;
   run: (id: string, target: string | null) => void;
 }) {
-  const config = useDock((s) => s.config);
+  const appearance = useDock((s) => s.config.appearance);
   const edit = useDock((s) => s.edit);
-  const { dock, appearance } = config;
+  const editDock = useDock((s) => s.editDock);
+  const dock = useCurrentDock();
 
   return (
     <div
@@ -39,6 +41,7 @@ export function SettingsPanel({
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <DockRows />
         <Section title="Layout">
           <Row label="Position">
             <Select
@@ -49,7 +52,7 @@ export function SettingsPanel({
                 { value: "left", label: "Left" },
                 { value: "right", label: "Right" },
               ]}
-              onChange={(v) => edit((d) => void (d.dock.position = v))}
+              onChange={(v) => editDock((d) => void (d.position = v))}
             />
           </Row>
           <Row label="Icon size">
@@ -59,7 +62,7 @@ export function SettingsPanel({
               max={96}
               step={2}
               format={(v) => `${v} px`}
-              onChange={(v) => edit((d) => void (d.dock.iconSize = v))}
+              onChange={(v) => editDock((d) => void (d.iconSize = v))}
             />
           </Row>
           <Row label="Magnification">
@@ -69,14 +72,14 @@ export function SettingsPanel({
               max={1.8}
               step={0.05}
               format={(v) => `${fixed(2)(v)}×`}
-              onChange={(v) => edit((d) => void (d.dock.magnification = v))}
+              onChange={(v) => editDock((d) => void (d.magnification = v))}
             />
           </Row>
           <MonitorRows />
           <Row label="Auto-hide">
             <Toggle
               value={dock.autoHide}
-              onChange={(v) => edit((d) => void (d.dock.autoHide = v))}
+              onChange={(v) => editDock((d) => void (d.autoHide = v))}
             />
           </Row>
           <Row label="Reveal delay">
@@ -86,7 +89,7 @@ export function SettingsPanel({
               max={1000}
               step={50}
               format={(v) => `${v} ms`}
-              onChange={(v) => edit((d) => void (d.dock.autoHideDelay = v))}
+              onChange={(v) => editDock((d) => void (d.autoHideDelay = v))}
             />
           </Row>
         </Section>

@@ -1,7 +1,7 @@
 import { motion, Reorder, type MotionValue } from "framer-motion";
 import { Globe, LayoutGrid, Settings } from "lucide-react";
 import { forwardRef } from "react";
-import type { DockConfig } from "@glass-dock/shared";
+import type { DockDef } from "@glass-dock/shared";
 import { totalBadge } from "../lib/badge";
 import { itemKey, type Entry } from "../lib/entries";
 import { isHorizontal } from "../lib/geometry";
@@ -12,7 +12,7 @@ import { useDock } from "../store/dockStore";
 import { WIDGETS } from "../widgets/registry";
 
 interface Props {
-  dock: DockConfig["dock"];
+  dock: DockDef;
   pinned: Entry[];
   running: Entry[];
   icons: Record<string, string>;

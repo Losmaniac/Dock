@@ -13,14 +13,14 @@ use windows::Win32::Graphics::Dwm::{
 
 use crate::error::DockResult;
 
-/// source hwnd -> HTHUMBNAIL
-static ACTIVE: Mutex<Option<HashMap<isize, isize>>> = Mutex::new(None);
+/// (dock window, source window) -> HTHUMBNAIL. Keyed by both so two docks can preview the same app.
+static ACTIVE: Mutex<Option<HashMap<(isize, isize), isize>>> = Mutex::new(None);
 
 /// `dest` is in physical pixels relative to the dock window's client area.
 pub fn show(dock: HWND, source: HWND, dest: Rect) -> DockResult<()> {
     let mut guard = ACTIVE.lock().unwrap_or_else(|p| p.into_inner());
     let map = guard.get_or_insert_with(HashMap::new);
-    let key = source.0 as isize;
+    let key = (dock.0 as isize, source.0 as isize);
     // SAFETY: handles come from this process / EnumWindows; thumbnails are unregistered in
     // `hide_all` and whenever a source disappears (registration then fails and is dropped).
     unsafe {
@@ -46,12 +46,16 @@ pub fn show(dock: HWND, source: HWND, dest: Rect) -> DockResult<()> {
     Ok(())
 }
 
-pub fn hide_all() {
+/// Drop every thumbnail owned by `dock`.
+pub fn hide_all(dock: HWND) {
     let mut guard = ACTIVE.lock().unwrap_or_else(|p| p.into_inner());
     if let Some(map) = guard.as_mut() {
-        for (_, t) in map.drain() {
-            // SAFETY: handle was returned by DwmRegisterThumbnail and is removed from the map.
-            unsafe { let _ = DwmUnregisterThumbnail(t); }
+        let mine: Vec<(isize, isize)> = map.keys().filter(|(d, _)| *d == dock.0 as isize).copied().collect();
+        for k in mine {
+            if let Some(t) = map.remove(&k) {
+                // SAFETY: handle was returned by DwmRegisterThumbnail and is removed from the map.
+                unsafe { let _ = DwmUnregisterThumbnail(t); }
+            }
         }
     }
 }

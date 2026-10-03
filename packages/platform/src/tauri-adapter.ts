@@ -29,6 +29,7 @@ import type {
   Unsubscribe,
   WindowInfo,
 } from "@glass-dock/shared";
+import { parseConfig } from "@glass-dock/shared";
 import { loadConfigFromRaw } from "./config-io";
 import type { PlatformAPI } from "./platform-api";
 
@@ -158,6 +159,17 @@ export class TauriAdapter implements PlatformAPI {
   setAutoHide = (_on: boolean) => Promise.resolve(); // driven by setDockGeometry
 
   // Config
+  onConfigChanged(cb: (cfg: DockConfig) => void): Unsubscribe {
+    return subscribe<string>("config-changed", (json) => {
+      try {
+        const res = parseConfig(JSON.parse(json));
+        if (res.ok) cb(res.config);
+      } catch {
+        /* a half-written or foreign payload: ignore, the next save will correct it */
+      }
+    });
+  }
+  syncDockWindows = (dockIds: string[]) => invoke<void>("sync_dock_windows", { dockIds });
   loadConfig = async (): Promise<DockConfig> =>
     loadConfigFromRaw(await invoke<string | null>("load_config"), () =>
       invoke("backup_corrupt_config"),

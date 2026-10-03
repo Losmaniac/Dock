@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { findItem } from "../lib/docks";
 import { useDock } from "../store/dockStore";
 import { WIDGETS } from "../widgets/registry";
 
@@ -8,7 +9,7 @@ export const widgetPanelSize = (kind: keyof typeof WIDGETS) => WIDGETS[kind].pan
 
 /** Frame around a widget's own panel. The widget is looked up live so edits show immediately. */
 export function WidgetPanel({ itemId, close }: { itemId: string; close: () => void }) {
-  const item = useDock((s) => s.config.items.find((i) => i.id === itemId));
+  const item = useDock((s) => findItem(s.config, itemId));
   if (item?.type !== "widget") return null;
   const def = WIDGETS[item.widget];
   const size = def.panel ?? FALLBACK;

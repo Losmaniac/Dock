@@ -1,6 +1,7 @@
 import { useMotionValue } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import type { DockPosition } from "@glass-dock/shared";
+import { extraDockIds, isOrphan } from "../lib/docks";
 import { buildEntries } from "../lib/entries";
 import { isHorizontal } from "../lib/geometry";
 import { needsKeyboard } from "../lib/overlay";
@@ -13,7 +14,7 @@ import { useWallpaper } from "../hooks/useWallpaper";
 import { effectiveAppearance } from "../lib/wallpaper";
 import { usePreview } from "../hooks/usePreview";
 import { useEntryIcons, useShellSync } from "../hooks/useShellSync";
-import { useDock } from "../store/dockStore";
+import { useCurrentDock, useDock } from "../store/dockStore";
 import { DockBar } from "./DockBar";
 import { HotEdge } from "./HotEdge";
 import { OverlayLayer, sizeOf } from "./OverlayLayer";
@@ -30,8 +31,9 @@ const ALIGN: Record<DockPosition, string> = {
 
 export function Dock() {
   const platform = useDock((s) => s.platform)!;
-  const { config, windows, icons, ready, open, setOpen, reorder, unpin } = useDock();
-  const { dock } = config;
+  const { config, windows, icons, ready, open, setOpen, reorder, unpin, dockId } = useDock();
+  const dock = useCurrentDock();
+  const isMain = dockId === null;
   const wallpaper = useWallpaper(config.appearance.accentFromWallpaper);
   const appearance = effectiveAppearance(config.appearance, wallpaper);
   const horizontal = isHorizontal(dock.position);
@@ -40,8 +42,8 @@ export function Dock() {
   const pointer = useMotionValue(Infinity);
   const actions = useDockActions();
   const { pinned, running } = useMemo(
-    () => buildEntries(config.items, windows),
-    [config.items, windows],
+    () => buildEntries(dock.items, windows),
+    [dock.items, windows],
   );
   const pv = usePreview(open !== null || dock.autoHide);
   const liveEntry = pv.preview
@@ -52,16 +54,17 @@ export function Dock() {
   const overlay = open ? sizeOf(open) : previewEntry ? previewSize(previewEntry) : null;
   const geo = useDockGeometry(navRef, dock, overlay, ready);
   useFileDrop();
-  useHotkeys(actions.runAction);
+  // Hotkeys are global to the app, so only the main dock window registers and handles them.
+  useHotkeys(actions.runAction, isMain);
 
   useEntryIcons(pinned, running);
   const keyboardMode = useDock((s) => s.keyboardMode);
   const widgetKeyboard =
     open?.kind === "widget" &&
-    config.items.some(
+    dock.items.some(
       (i) => i.id === open.itemId && i.type === "widget" && WIDGETS[i.widget].keyboard,
     );
-  useShellSync(needsKeyboard(open, keyboardMode, !!widgetKeyboard), closeOverlay);
+  useShellSync(needsKeyboard(open, keyboardMode, !!widgetKeyboard), closeOverlay, isMain);
   const { enter, leave } = geo;
   useEffect(() => {
     if (!keyboardMode) return leave();
@@ -69,7 +72,16 @@ export function Dock() {
     navRef.current?.querySelector<HTMLElement>("button")?.focus();
   }, [keyboardMode, enter, leave]);
 
-  if (!ready) return null;
+  // The main window owns the set of extra dock windows; they are created and closed in Rust.
+  const extraKey = JSON.stringify(extraDockIds(config));
+  useEffect(() => {
+    if (!isMain || !ready) return;
+    platform
+      .syncDockWindows(JSON.parse(extraKey) as string[])
+      .catch((e) => useDock.getState().report(e));
+  }, [platform, isMain, ready, extraKey]);
+
+  if (!ready || isOrphan(config, dockId)) return null;
   const across = horizontal ? geo.nav.h : geo.nav.w;
 
   return (

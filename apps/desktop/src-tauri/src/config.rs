@@ -38,12 +38,14 @@ pub fn load_config() -> DockResult<Option<String>> {
 
 /// Atomic write: temp file in the same directory, then rename over the target.
 #[tauri::command]
-pub fn save_config(json: String) -> DockResult<()> {
+pub fn save_config(app: tauri::AppHandle, json: String) -> DockResult<()> {
     cfgfile::validate_json(&json).map_err(DockError::InvalidArgument)?;
     let path = config_path()?;
     let tmp = path.with_extension("json.tmp");
-    fs::write(&tmp, json)?;
+    fs::write(&tmp, &json)?;
     fs::rename(&tmp, &path)?;
+    // Every dock window shows the same config; tell them all (including the saver, which ignores it).
+    let _ = tauri::Emitter::emit(&app, "config-changed", &json);
     Ok(())
 }
 

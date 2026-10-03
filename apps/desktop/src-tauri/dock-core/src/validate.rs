@@ -104,3 +104,23 @@ mod settings_tests {
         assert!(!is_valid_settings_page("Display"));
     }
 }
+
+/// Dock ids are UUIDs written by the app; anything else never becomes a window label or URL.
+pub fn valid_dock_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+}
+
+#[cfg(test)]
+mod dock_id_tests {
+    use super::valid_dock_id;
+
+    #[test]
+    fn accepts_uuids_and_rejects_anything_that_could_escape_a_url_or_label() {
+        assert!(valid_dock_id("3f2c9e1a-4b5d-4c6e-8f70-123456789abc"));
+        assert!(!valid_dock_id(""));
+        assert!(!valid_dock_id("a/b"));
+        assert!(!valid_dock_id("a?x=1"));
+        assert!(!valid_dock_id("../main"));
+        assert!(!valid_dock_id(&"a".repeat(65)));
+    }
+}

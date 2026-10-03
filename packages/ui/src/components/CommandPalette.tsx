@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { buildEntries } from "../lib/entries";
 import { rank } from "../lib/fuzzy";
 import { buildPaletteItems, type PaletteItem } from "../lib/palette";
-import { useDock } from "../store/dockStore";
+import { useCurrentDock, useDock } from "../store/dockStore";
 
 export const PALETTE_SIZE = { w: 560, h: 380 };
 
@@ -14,7 +14,7 @@ export function CommandPalette(props: {
 }) {
   const platform = useDock((s) => s.platform)!;
   const report = useDock((s) => s.report);
-  const items = useDock((s) => s.config.items);
+  const items = useCurrentDock().items;
   const windows = useDock((s) => s.windows);
   const workspaces = useDock((s) => s.config.workspaces);
   const [query, setQuery] = useState("");

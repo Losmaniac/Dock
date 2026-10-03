@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DocHit, RecentFile, StartApp } from "@glass-dock/shared";
 import { buildSections, categoriesOf, type Row } from "../lib/launcher";
 import { itemKey } from "../lib/entries";
-import { messageOf, useDock } from "../store/dockStore";
+import { messageOf, useCurrentDock, useDock } from "../store/dockStore";
 
 export const LAUNCHER_SIZE = { w: 640, h: 540 };
 
@@ -13,7 +13,7 @@ const iconKey = (r: Row) =>
 export function Launcher({ close }: { close: () => void }) {
   const platform = useDock((s) => s.platform)!;
   const report = useDock((s) => s.report);
-  const items = useDock((s) => s.config.items);
+  const items = useCurrentDock().items;
   const icons = useDock((s) => s.icons);
   const loadIcon = useDock((s) => s.loadIcon);
   const [query, setQuery] = useState("");

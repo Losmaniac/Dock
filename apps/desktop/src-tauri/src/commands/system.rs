@@ -66,8 +66,9 @@ pub fn show_thumbnail(window: WebviewWindow, hwnd: String, rect: ThumbRect) -> D
 }
 
 #[tauri::command]
-pub fn hide_thumbnails() {
-    thumbs::hide_all();
+pub fn hide_thumbnails(window: WebviewWindow) -> DockResult<()> {
+    thumbs::hide_all(HWND(window.hwnd()?.0 as *mut std::ffi::c_void));
+    Ok(())
 }
 
 #[tauri::command]

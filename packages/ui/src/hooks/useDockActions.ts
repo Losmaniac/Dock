@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { LaunchItem, WindowInfo } from "@glass-dock/shared";
 import { OPACITY_STEPS, SNAP_LAYOUTS, ACTION_IDS, parseAction } from "../lib/actions";
 import { buildEntries, clickAction, type Entry } from "../lib/entries";
+import { currentDock } from "../lib/docks";
 import { runWorkspace } from "../lib/workspace";
 import type { AppEntry } from "../lib/overlay";
 import type { MenuAction } from "../components/ContextMenu";
@@ -126,7 +127,7 @@ export function useDockActions() {
         if (hwnd) run(platform.snapWindow(hwnd, a.layout));
         else report("No window to snap.");
       } else if (a.type === "jump") {
-        const { pinned } = buildEntries(st.config.items, st.windows);
+        const { pinned } = buildEntries(currentDock(st.config, st.dockId).items, st.windows);
         const nth = pinned.filter(
           (p) => p.kind !== "other" || ["folder", "url"].includes(p.item.type),
         )[a.index - 1];
@@ -150,7 +151,7 @@ export function useDockActions() {
           ),
         );
       } else if (a.id === ACTION_IDS.showTaskbar) {
-        st.edit((d) => void (d.dock.hideTaskbar = false));
+        st.edit((d) => void (d.system.hideTaskbar = false));
       } else if (a.id === ACTION_IDS.launcher) {
         st.setOpen(st.open?.kind === "launcher" ? null : { kind: "launcher" });
       } else if (a.id === ACTION_IDS.focusDock) {
@@ -165,7 +166,7 @@ export function useDockActions() {
         );
       } else if (a.id === ACTION_IDS.settings) st.setOpen({ kind: "settings" });
       else if (a.id === ACTION_IDS.toggleAutoHide)
-        st.edit((d) => void (d.dock.autoHide = !d.dock.autoHide));
+        st.editDock((dock) => void (dock.autoHide = !dock.autoHide));
     },
     [platform, run, report, activate],
   );
@@ -173,7 +174,7 @@ export function useDockActions() {
   const runEntry = useCallback(
     (entryId: string) => {
       const st = useDock.getState();
-      const { pinned, running } = buildEntries(st.config.items, st.windows);
+      const { pinned, running } = buildEntries(currentDock(st.config, st.dockId).items, st.windows);
       const e = [...pinned, ...running].find((x) => x.id === entryId);
       if (e) activate(e);
     },

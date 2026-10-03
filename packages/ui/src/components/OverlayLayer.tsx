@@ -5,6 +5,7 @@ import type { Open } from "../lib/overlay";
 import { OVERLAY_GAP } from "../lib/geometry";
 import type { Overlay } from "../hooks/useDockGeometry";
 import { CommandPalette, PALETTE_SIZE } from "./CommandPalette";
+import { findItem } from "../lib/docks";
 import { useDock } from "../store/dockStore";
 import { ContextMenu, MENU_ROW, menuRows } from "./ContextMenu";
 import { LAUNCHER_SIZE, Launcher } from "./Launcher";
@@ -25,7 +26,7 @@ export function sizeOf(o: Open): Overlay {
     case "palette":
       return PALETTE_SIZE;
     case "widget": {
-      const it = useDock.getState().config.items.find((i) => i.id === o.itemId);
+      const it = findItem(useDock.getState().config, o.itemId);
       return it?.type === "widget" ? widgetPanelSize(it.widget) : { w: 300, h: 220 };
     }
     case "launcher":

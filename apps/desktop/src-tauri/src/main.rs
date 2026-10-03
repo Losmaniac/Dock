@@ -41,6 +41,7 @@ fn main() {
             commands::shell::set_blur_mode,
             commands::shell::set_dock_geometry,
             commands::shell::set_dock_focusable,
+            commands::docks::sync_dock_windows,
             commands::windows::list_windows,
             commands::windows::focus_window,
             commands::windows::minimize_window,
@@ -87,30 +88,10 @@ fn main() {
             config::backup_corrupt_config,
         ])
         .setup(|app| {
-            // The window is created hidden (tauri.conf.json). Apply native blur first,
-            // style it, and only then show it, to avoid a white flash at startup.
-            let window = app
-                .get_webview_window("main")
-                .ok_or("main window missing")?;
-
-            if let Err(e) = commands::shell::apply_blur(&window, commands::shell::BlurMode::Mica) {
-                eprintln!("native blur unavailable: {e}");
-            }
-            // Never take focus from the app being controlled; keep out of Alt+Tab.
-            commands::shell::set_dock_focusable(window.clone(), false).ok();
-            {
-                use windows::Win32::Foundation::HWND;
-                use windows::Win32::UI::WindowsAndMessaging::{
-                    GetWindowLongW, SetWindowLongW, GWL_EXSTYLE, WS_EX_TOOLWINDOW,
-                };
-                let hwnd = HWND(window.hwnd()?.0 as *mut std::ffi::c_void);
-                // SAFETY: style update on our own window.
-                unsafe {
-                    let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
-                    SetWindowLongW(hwnd, GWL_EXSTYLE, (ex | WS_EX_TOOLWINDOW.0) as i32);
-                }
-            }
-            // Stays hidden until the frontend sends its first geometry (see visibility.rs).
+            // The main window is created hidden (tauri.conf.json). Style it and apply native blur
+            // first; it is revealed after the frontend's first placement to avoid a white flash.
+            let window = app.get_webview_window("main").ok_or("main window missing")?;
+            commands::docks::prepare_window(&window)?;
             events::start(app.handle().clone());
             Ok(())
         })
@@ -119,12 +100,9 @@ fn main() {
         .run(|app, event| {
             // Always restore system state on exit (AGENTS.md pitfall 9).
             if let tauri::RunEvent::Exit = event {
+                let _ = app; // windows are already gone; the process-wide registries do the cleanup
                 native::taskbar::restore();
-                if let Some(w) = app.get_webview_window("main") {
-                    if let Ok(h) = w.hwnd() {
-                        native::appbar::release(windows::Win32::Foundation::HWND(h.0 as *mut std::ffi::c_void));
-                    }
-                }
+                native::appbar::release_all();
             }
         });
 }

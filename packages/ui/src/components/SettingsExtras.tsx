@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { SNAP_LAYOUTS } from "../lib/actions";
-import { useDock } from "../store/dockStore";
+import { useCurrentDock, useDock } from "../store/dockStore";
 import { Row, Section, Select, Toggle } from "./controls";
 import { WIDGETS, WIDGET_GROUPS } from "../widgets/registry";
 import type { WidgetKind } from "@glass-dock/shared";
 
 export function MonitorRows() {
   const monitors = useDock((s) => s.monitors);
-  const dock = useDock((s) => s.config.dock);
+  const dock = useCurrentDock();
   const edit = useDock((s) => s.edit);
+  const editDock = useDock((s) => s.editDock);
+  const hideTaskbar = useDock((s) => s.config.system.hideTaskbar);
   const options = [
     { value: "primary", label: "Primary" },
     ...monitors.map((m, i) => ({ value: m.id, label: `${i + 1}: ${m.width}×${m.height}` })),
@@ -19,22 +21,22 @@ export function MonitorRows() {
         <Select
           value={dock.monitor}
           options={options}
-          onChange={(v) => edit((d) => void (d.dock.monitor = v))}
+          onChange={(v) => editDock((d) => void (d.monitor = v))}
         />
       </Row>
       <Row label="Reserve screen space">
         <Toggle
           value={dock.reserveSpace}
-          onChange={(v) => edit((d) => void (d.dock.reserveSpace = v))}
+          onChange={(v) => editDock((d) => void (d.reserveSpace = v))}
         />
       </Row>
       <Row label="Hide Windows taskbar">
         <Toggle
-          value={dock.hideTaskbar}
-          onChange={(v) => edit((d) => void (d.dock.hideTaskbar = v))}
+          value={hideTaskbar}
+          onChange={(v) => edit((d) => void (d.system.hideTaskbar = v))}
         />
       </Row>
-      {dock.hideTaskbar && (
+      {hideTaskbar && (
         <p className="pb-1 text-xs opacity-60">
           The taskbar comes back when the dock exits, if it crashes (a small guard process restores
           it), or when you switch this off. Palette action: "Show Windows taskbar".
@@ -97,7 +99,7 @@ export function IntegrationRows() {
 }
 
 export function WidgetRows() {
-  const items = useDock((s) => s.config.items);
+  const items = useCurrentDock().items;
   const toggle = useDock((s) => s.toggleWidget);
   const setSize = useDock((s) => s.setWidgetSize);
   const kinds = Object.keys(WIDGETS) as WidgetKind[];

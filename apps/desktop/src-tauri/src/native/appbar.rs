@@ -1,6 +1,7 @@
 //! AppBar registration (AGENTS.md 5.6): reserves screen space so maximized windows stop at
 //! the dock. Off by default; always removed on exit. Never touches the native taskbar.
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 use dock_core::layout::{appbar_rect, Position, Rect};
 use windows::Win32::Foundation::{HWND, RECT};
@@ -10,7 +11,12 @@ use windows::Win32::UI::Shell::{
 };
 use windows::Win32::UI::WindowsAndMessaging::WM_USER;
 
-static REGISTERED: AtomicBool = AtomicBool::new(false);
+/// One registration per dock window (a window can only be an AppBar once).
+static REGISTERED: Mutex<Option<HashSet<isize>>> = Mutex::new(None);
+
+fn registry() -> std::sync::MutexGuard<'static, Option<HashSet<isize>>> {
+    REGISTERED.lock().unwrap_or_else(|p| p.into_inner())
+}
 
 fn data(hwnd: HWND) -> APPBARDATA {
     APPBARDATA { cbSize: std::mem::size_of::<APPBARDATA>() as u32, hWnd: hwnd, ..Default::default() }
@@ -22,7 +28,7 @@ pub fn reserve(hwnd: HWND, monitor: Rect, pos: Position, thickness: i32) {
     // SAFETY: APPBARDATA is fully initialized; the shell copies what it needs.
     unsafe {
         let mut d = data(hwnd);
-        if !REGISTERED.swap(true, Ordering::SeqCst) {
+        if registry().get_or_insert_with(HashSet::new).insert(hwnd.0 as isize) {
             d.uCallbackMessage = WM_USER + 0x200;
             SHAppBarMessage(ABM_NEW, &mut d);
         }
@@ -47,11 +53,20 @@ pub fn reserve(hwnd: HWND, monitor: Rect, pos: Position, thickness: i32) {
 }
 
 pub fn release(hwnd: HWND) {
-    if REGISTERED.swap(false, Ordering::SeqCst) {
+    let was = registry().as_mut().is_some_and(|set| set.remove(&(hwnd.0 as isize)));
+    if was {
         // SAFETY: APPBARDATA initialized; harmless if the shell already dropped us.
         unsafe {
             let mut d = data(hwnd);
             SHAppBarMessage(ABM_REMOVE, &mut d);
         }
+    }
+}
+
+/// Exit path: drop every registration this process still holds.
+pub fn release_all() {
+    let all: Vec<isize> = registry().as_ref().map(|s| s.iter().copied().collect()).unwrap_or_default();
+    for h in all {
+        release(HWND(h as *mut std::ffi::c_void));
     }
 }

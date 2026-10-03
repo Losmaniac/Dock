@@ -11,6 +11,6 @@ describe("config import/export", () => {
     expect(importJson("nope")).toMatchObject({ ok: false });
     const r = importJson(JSON.stringify({ version: 1, dock: { iconSize: 1 } }));
     expect(r).toMatchObject({ ok: false });
-    if (!r.ok) expect(r.error).toContain("dock.iconSize");
+    if (!r.ok) expect(r.error).toContain("docks.0.iconSize");
   });
 });

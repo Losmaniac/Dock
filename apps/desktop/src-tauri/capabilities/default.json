@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Least-privilege capabilities for the dock window. Add permissions only when a feature needs them.",
-  "windows": ["main"],
+  "windows": ["main", "dock-*"],
   "permissions": ["core:event:default"]
 }

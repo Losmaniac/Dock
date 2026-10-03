@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONFIG_VERSION = 1;
+export const CONFIG_VERSION = 2;
 
 export const WIDGET_KINDS = [
   "clock",
@@ -109,20 +109,38 @@ export const workspaceSchema = z.object({
   steps: z.array(workspaceStepSchema).default([]),
 });
 
+export const dockDefSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().default("Dock"),
+  /** "primary" or a monitor id from the platform; an unplugged monitor falls back to primary. */
+  monitor: z.string().default("primary"),
+  position: z.enum(["bottom", "top", "left", "right"]).default("bottom"),
+  autoHide: z.boolean().default(false),
+  autoHideDelay: z.number().min(0).max(2000).default(150),
+  reserveSpace: z.boolean().default(false),
+  iconSize: z.number().min(32).max(96).default(56),
+  magnification: z.number().min(1).max(1.8).default(1.6),
+  items: z.array(dockItemSchema).default([]),
+});
+export type DockDef = z.infer<typeof dockDefSchema>;
+
+export const newId = (): string => globalThis.crypto.randomUUID();
+
+export function newDock(over: Partial<DockDef> = {}): DockDef {
+  return dockDefSchema.parse({ id: newId(), ...over });
+}
+
 export const dockConfigSchema = z.object({
   version: z.literal(CONFIG_VERSION),
-  dock: z
+  /** One entry per dock window. The first dock is the main window; others get their own. */
+  docks: z
+    .array(dockDefSchema)
+    .min(1)
+    .default(() => [newDock()]),
+  system: z
     .object({
-      position: z.enum(["bottom", "top", "left", "right"]).default("bottom"),
-      autoHide: z.boolean().default(false),
-      autoHideDelay: z.number().min(0).max(2000).default(150),
-      reserveSpace: z.boolean().default(false),
       /** Hide the native Windows taskbar. A guard process restores it if the dock crashes. */
       hideTaskbar: z.boolean().default(false),
-      iconSize: z.number().min(32).max(96).default(56),
-      magnification: z.number().min(1).max(1.8).default(1.6),
-      /** "primary" or a monitor id. Showing the dock on every monitor is not implemented (ADR 003). */
-      monitor: z.string().default("primary"),
     })
     .default({}),
   appearance: z
@@ -153,7 +171,6 @@ export const dockConfigSchema = z.object({
       weatherKey: z.string().default(""),
     })
     .default({}),
-  items: z.array(dockItemSchema).default([]),
   hotkeys: z
     .object({
       toggleDock: z.string().default("Ctrl+Alt+D"),
@@ -184,11 +201,28 @@ export function defaultConfig(): DockConfig {
 }
 
 /**
- * Upgrade a raw config of any older version to the current one.
- * Add one step per schema change; v1 is the baseline so there is nothing to do yet.
+ * Upgrade a raw config of any older version to the current one. One step per schema change.
+ *  v1 -> v2: `dock` + `items` became `docks[0]`; `dock.hideTaskbar` moved to `system`.
  */
 export function migrateConfig(raw: unknown): unknown {
-  return raw;
+  if (typeof raw !== "object" || raw === null) return raw;
+  const r = raw as Record<string, unknown>;
+  if (r.version !== 1) return raw;
+  const {
+    dock = {},
+    items = [],
+    ...rest
+  } = r as { dock?: Record<string, unknown>; items?: unknown[] } & Record<string, unknown>;
+  const { hideTaskbar, ...withLegacy } = dock as Record<string, unknown>;
+  const dockFields = Object.fromEntries(
+    Object.entries(withLegacy).filter(([k]) => k !== "monitors"),
+  );
+  return {
+    ...rest,
+    version: 2,
+    docks: [{ id: newId(), name: "Main dock", ...dockFields, items }],
+    system: { hideTaskbar: hideTaskbar === true },
+  };
 }
 
 export type ParseConfigResult =

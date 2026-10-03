@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { currentDock } from "../lib/docks";
 import { messageOf, useDock } from "../store/dockStore";
 
 /**
@@ -10,12 +11,12 @@ export function useFileDrop() {
   useEffect(
     () =>
       platform.onFilesDropped((paths, point) => {
-        const { config, report, pinPath } = useDock.getState();
+        const { config, dockId, report, pinPath } = useDock.getState();
         const id = document
           .elementFromPoint(point.x, point.y)
           ?.closest("[data-item-id]")
           ?.getAttribute("data-item-id");
-        const target = config.items.find((i) => i.id === id);
+        const target = currentDock(config, dockId).items.find((i) => i.id === id);
         if (target?.type === "app") {
           for (const p of paths) {
             platform

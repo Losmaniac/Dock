@@ -80,40 +80,39 @@ export class MockAdapter implements PlatformAPI {
   }
 
   private seedConfig(): DockConfig {
-    return {
-      ...defaultConfig(),
-      items: [
-        ...MOCK_APPS.map((a) => ({
-          id: a.id,
-          type: "app" as const,
-          label: a.label,
-          path: a.path,
-          args: [],
-        })),
-        { id: "mock-sep", type: "separator" as const },
-        {
-          id: "mock-clock",
-          type: "widget" as const,
-          widget: "clock" as const,
-          size: "compact" as const,
-          options: {},
-        },
-        {
-          id: "mock-stats",
-          type: "widget" as const,
-          widget: "system-stats" as const,
-          size: "compact" as const,
-          options: {},
-        },
-        {
-          id: "mock-media",
-          type: "widget" as const,
-          widget: "now-playing" as const,
-          size: "compact" as const,
-          options: {},
-        },
-      ],
-    };
+    const base = defaultConfig();
+    const items = [
+      ...MOCK_APPS.map((a) => ({
+        id: a.id,
+        type: "app" as const,
+        label: a.label,
+        path: a.path,
+        args: [],
+      })),
+      { id: "mock-sep", type: "separator" as const },
+      {
+        id: "mock-clock",
+        type: "widget" as const,
+        widget: "clock" as const,
+        size: "compact" as const,
+        options: {},
+      },
+      {
+        id: "mock-stats",
+        type: "widget" as const,
+        widget: "system-stats" as const,
+        size: "compact" as const,
+        options: {},
+      },
+      {
+        id: "mock-media",
+        type: "widget" as const,
+        widget: "now-playing" as const,
+        size: "compact" as const,
+        options: {},
+      },
+    ];
+    return { ...base, docks: [{ ...base.docks[0]!, name: "Main dock", items }] };
   }
 
   private emitWindows(): void {
@@ -402,6 +401,12 @@ export class MockAdapter implements PlatformAPI {
   setBlurMode = (_mode: BlurMode) => Promise.resolve();
   setDockGeometry = (_g: DockGeometry) => Promise.resolve();
   setFocusable = (_on: boolean) => Promise.resolve();
+
+  /** The web demo has a single window, so nobody else changes the config. */
+  onConfigChanged =
+    (_cb: (cfg: DockConfig) => void): Unsubscribe =>
+    () => {};
+  syncDockWindows = (_dockIds: string[]) => Promise.resolve();
 
   loadConfig = () => Promise.resolve(structuredClone(this.config));
   saveConfig(cfg: DockConfig): Promise<void> {

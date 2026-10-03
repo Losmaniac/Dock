@@ -110,6 +110,10 @@ export interface PlatformAPI {
   setFocusable(on: boolean): Promise<void>;
 
   // Config
+  /** Another dock window saved the config; adopt it. Fires for all windows, including the saver. */
+  onConfigChanged(cb: (cfg: DockConfig) => void): Unsubscribe;
+  /** Make the set of extra dock windows (everything after the first dock) match `dockIds`. */
+  syncDockWindows(dockIds: string[]): Promise<void>;
   loadConfig(): Promise<DockConfig>;
   saveConfig(cfg: DockConfig): Promise<void>;
 }

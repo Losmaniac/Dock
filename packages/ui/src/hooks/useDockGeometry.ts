@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { DockConfig } from "@glass-dock/shared";
+import type { DockDef } from "@glass-dock/shared";
 import { computeGeometry } from "../lib/geometry";
 import { useDock } from "../store/dockStore";
 
@@ -15,7 +15,7 @@ export interface Overlay {
  */
 export function useDockGeometry(
   navRef: RefObject<HTMLElement | null>,
-  dock: DockConfig["dock"],
+  dock: DockDef,
   overlay: Overlay | null,
   ready: boolean,
 ) {
