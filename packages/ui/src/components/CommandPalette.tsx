@@ -16,14 +16,15 @@ export function CommandPalette(props: {
   const report = useDock((s) => s.report);
   const items = useDock((s) => s.config.items);
   const windows = useDock((s) => s.windows);
+  const workspaces = useDock((s) => s.config.workspaces);
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
   const input = useRef<HTMLInputElement>(null);
 
   const all = useMemo(() => {
     const { pinned, running } = buildEntries(items, windows);
-    return buildPaletteItems([...pinned, ...running], windows, props.target !== null);
-  }, [items, windows, props.target]);
+    return buildPaletteItems([...pinned, ...running], windows, props.target !== null, workspaces);
+  }, [items, windows, workspaces, props.target]);
   const results = useMemo(() => rank(all, query, (i) => `${i.title} ${i.subtitle}`), [all, query]);
 
   useEffect(() => input.current?.focus(), []);

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { LaunchItem, WindowInfo } from "@glass-dock/shared";
 import { OPACITY_STEPS, SNAP_LAYOUTS, ACTION_IDS, parseAction } from "../lib/actions";
 import { buildEntries, clickAction, type Entry } from "../lib/entries";
+import { runWorkspace } from "../lib/workspace";
 import type { AppEntry } from "../lib/overlay";
 import type { MenuAction } from "../components/ContextMenu";
 import { messageOf, useDock } from "../store/dockStore";
@@ -130,6 +131,26 @@ export function useDockActions() {
           (p) => p.kind !== "other" || ["folder", "url"].includes(p.item.type),
         )[a.index - 1];
         if (nth) activate(nth);
+      } else if (a.type === "workspace") {
+        const ws = st.config.workspaces.find((w) => w.id === a.id);
+        if (!ws) return report("That workspace no longer exists.");
+        void runWorkspace(ws, {
+          launch: (item) => platform.launch(item),
+          listWindows: () => platform.listWindows(),
+          snap: (h, l) => platform.snapWindow(h, l),
+          place: (h, pl) => platform.placeWindow(h, pl),
+          setMuted: (m) => platform.setMuted("output", m),
+          sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+          now: () => Date.now(),
+        }).then((r) =>
+          report(
+            r.failures.length
+              ? `Workspace "${ws.name}": ${r.failures.join("; ")}`
+              : `Workspace "${ws.name}" applied.`,
+          ),
+        );
+      } else if (a.id === ACTION_IDS.switcher) {
+        st.setOpen(st.open?.kind === "switcher" ? null : { kind: "switcher" });
       } else if (a.id === ACTION_IDS.palette) {
         st.setOpen(
           st.open?.kind === "palette"

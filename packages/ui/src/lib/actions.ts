@@ -22,18 +22,22 @@ export const ACTION_IDS = {
   toggleDock: "toggle-dock",
   settings: "open-settings",
   toggleAutoHide: "toggle-autohide",
+  switcher: "window-switcher",
 } as const;
 
 export const snapActionId = (l: SnapLayout) => `snap:${l}`;
+export const wsActionId = (id: string) => `ws:${id}`;
 export const jumpActionId = (n: number) => `jump:${n}`;
 
 export type ParsedAction =
   | { type: "snap"; layout: SnapLayout }
   | { type: "jump"; index: number }
+  | { type: "workspace"; id: string }
   | { type: "simple"; id: string };
 
 export function parseAction(id: string): ParsedAction {
   if (id.startsWith("snap:")) return { type: "snap", layout: id.slice(5) as SnapLayout };
+  if (id.startsWith("ws:")) return { type: "workspace", id: id.slice(3) };
   if (id.startsWith("jump:")) return { type: "jump", index: Number(id.slice(5)) };
   return { type: "simple", id };
 }

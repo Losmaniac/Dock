@@ -1,4 +1,5 @@
 import type {
+  AudioState,
   BatteryInfo,
   BlurMode,
   DockConfig,
@@ -6,6 +7,8 @@ import type {
   DockPosition,
   FolderEntry,
   PathInfo,
+  PixelRect,
+  Placement,
   IconSource,
   MediaAction,
   MonitorInfo,
@@ -50,6 +53,25 @@ export interface PlatformAPI {
   mediaControl(action: MediaAction): Promise<void>;
   getMonitors(): Promise<MonitorInfo[]>;
   onMonitorsChanged(cb: (m: MonitorInfo[]) => void): Unsubscribe;
+
+  // Audio
+  getAudio(): Promise<AudioState>;
+  setVolume(volume: number): Promise<void>;
+  setMuted(target: "output" | "input", muted: boolean): Promise<void>;
+
+  // Window layout (workspaces)
+  capturePlacement(hwnd: string): Promise<Placement | null>;
+  placeWindow(hwnd: string, placement: Placement): Promise<void>;
+
+  // Live previews (DWM thumbnails composited over the dock window)
+  showThumbnail(hwnd: string, rect: PixelRect): Promise<void>;
+  hideThumbnails(): Promise<void>;
+
+  // System
+  getAutostart(): Promise<boolean>;
+  setAutostart(on: boolean): Promise<void>;
+  /** Persist an exported config; resolves to a human-readable location. */
+  exportConfig(json: string): Promise<string>;
 
   // Dock shell
   setDockPosition(pos: DockPosition): Promise<void>;

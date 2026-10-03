@@ -6,6 +6,7 @@ import { useDock } from "../store/dockStore";
 export interface Overlay {
   w: number;
   h: number;
+  fullscreen?: boolean;
 }
 
 /**

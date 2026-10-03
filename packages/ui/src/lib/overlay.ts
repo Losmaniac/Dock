@@ -10,8 +10,10 @@ export type Open =
   | { kind: "menu"; title: string; actions: MenuAction[] }
   | { kind: "settings" }
   | { kind: "palette"; target: string | null }
+  | { kind: "switcher" }
   | { kind: "widget"; widget: WidgetKind }
   | { kind: "stack"; item: Extract<DockItem, { type: "folder" }> }
   | { kind: "props"; entry: AppEntry };
 
-export const needsKeyboard = (o: Open | null) => o?.kind === "settings" || o?.kind === "palette";
+export const needsKeyboard = (o: Open | null) =>
+  o?.kind === "settings" || o?.kind === "palette" || o?.kind === "switcher";

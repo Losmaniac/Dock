@@ -55,7 +55,7 @@ export function WidgetRows() {
 }
 
 /** Commits on blur or Enter so a half-typed accelerator is never registered. */
-function AccelInput({
+export function AccelInput({
   value,
   onCommit,
   label,
@@ -96,6 +96,13 @@ export function HotkeyRows() {
           label="Command palette"
           value={hk.commandPalette}
           onCommit={(v) => edit((d) => void (d.hotkeys.commandPalette = v))}
+        />
+      </Row>
+      <Row label="Window switcher">
+        <AccelInput
+          label="Window switcher"
+          value={hk.switcher}
+          onCommit={(v) => edit((d) => void (d.hotkeys.switcher = v))}
         />
       </Row>
       <Row label="Jump to item 1–9">

@@ -17,6 +17,12 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build:web
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml -p dock-core
   desktop:
     runs-on: windows-latest
     steps:
@@ -28,5 +34,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: apps/desktop/src-tauri }
       - run: pnpm install --frozen-lockfile
-      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --workspace
       - run: pnpm --filter @glass-dock/desktop tauri build --no-bundle

@@ -26,3 +26,8 @@ pub fn set_fullscreen(app: &AppHandle, on: bool) -> bool {
     }
     changed
 }
+
+pub fn show_for_user(app: &AppHandle) {
+    USER_HIDDEN.store(false, Ordering::SeqCst);
+    apply(app);
+}

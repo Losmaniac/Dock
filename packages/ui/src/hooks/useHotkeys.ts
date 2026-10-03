@@ -6,7 +6,7 @@ import { messageOf, useDock } from "../store/dockStore";
 export function useHotkeys(runAction: (id: string, target: string | null) => void) {
   const platform = useDock((s) => s.platform)!;
   const ready = useDock((s) => s.ready);
-  const key = useDock((s) => JSON.stringify(desiredHotkeys(s.config.hotkeys)));
+  const key = useDock((s) => JSON.stringify(desiredHotkeys(s.config.hotkeys, s.config.workspaces)));
   const registered = useRef<Record<string, string>>({});
 
   useEffect(() => {

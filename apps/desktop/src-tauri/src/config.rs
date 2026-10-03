@@ -62,3 +62,16 @@ pub fn backup_corrupt_config() -> DockResult<Option<String>> {
     fs::copy(&path, path.with_file_name(&name))?;
     Ok(Some(name))
 }
+
+/// Writes an export under `%APPDATA%\GlassDock\exports` (nothing is ever written elsewhere)
+/// and returns the full path so the UI can reveal it.
+#[tauri::command]
+pub fn export_config(json: String) -> DockResult<String> {
+    cfgfile::validate_json(&json).map_err(DockError::InvalidArgument)?;
+    let dir = app_dir()?.join("exports");
+    fs::create_dir_all(&dir)?;
+    let secs = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let path = dir.join(format!("glass-dock-{secs}.json"));
+    fs::write(&path, json)?;
+    Ok(path.to_string_lossy().to_string())
+}

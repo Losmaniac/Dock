@@ -29,10 +29,52 @@ export const dockItemSchema = z.discriminatedUnion("type", [
   z.object({
     id: z.string().min(1),
     type: z.literal("widget"),
-    widget: z.enum(["clock", "system-stats", "battery", "now-playing"]),
+    widget: z.enum(["clock", "system-stats", "battery", "now-playing", "volume"]),
   }),
   z.object({ id: z.string().min(1), type: z.literal("separator") }),
 ]);
+
+const launchTargetSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("app"),
+    path: z.string().min(1),
+    args: z.array(z.string()).default([]),
+  }),
+  z.object({ type: z.literal("uwp"), aumid: z.string().min(1) }),
+  z.object({ type: z.literal("folder"), path: z.string().min(1) }),
+  z.object({ type: z.literal("file"), path: z.string().min(1) }),
+  z.object({ type: z.literal("url"), url: z.string().url() }),
+]);
+
+/** Which window a step acts on: by executable path or Store-app id. */
+const matchSchema = z
+  .object({ path: z.string().optional(), aumid: z.string().optional() })
+  .refine((m) => !!m.path || !!m.aumid, "match needs a path or an aumid");
+
+const placementSchema = z.object({
+  monitorId: z.string(),
+  x: z.number(),
+  y: z.number(),
+  w: z.number(),
+  h: z.number(),
+  maximized: z.boolean().default(false),
+});
+
+/** A workspace is also an action chain: ordered steps, optionally bound to a hotkey. */
+export const workspaceStepSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("launch"), target: launchTargetSchema }),
+  z.object({ type: z.literal("place"), match: matchSchema, placement: placementSchema }),
+  z.object({ type: z.literal("snap"), match: matchSchema, layout: z.string() }),
+  z.object({ type: z.literal("mute"), muted: z.boolean() }),
+  z.object({ type: z.literal("wait"), ms: z.number().min(0).max(10_000) }),
+]);
+
+export const workspaceSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  hotkey: z.string().optional(),
+  steps: z.array(workspaceStepSchema).default([]),
+});
 
 export const dockConfigSchema = z.object({
   version: z.literal(CONFIG_VERSION),
@@ -68,13 +110,18 @@ export const dockConfigSchema = z.object({
       commandPalette: z.string().default("Ctrl+Space"),
       /** Modifier for "jump to the Nth dock item": <modifier>+1 .. <modifier>+9. Empty = off. */
       jumpModifier: z.string().default("Ctrl+Alt"),
+      /** Window switcher overlay. Alt+Tab itself cannot be taken over by a global hotkey. */
+      switcher: z.string().default("Ctrl+Alt+W"),
       /** Snap layout -> accelerator, for example `{ "left-half": "Ctrl+Alt+Left" }`. */
       snap: z.record(z.string()).default({}),
     })
     .default({}),
-  workspaces: z.array(z.unknown()).default([]),
+  workspaces: z.array(workspaceSchema).default([]),
 });
 
+export type Workspace = z.infer<typeof workspaceSchema>;
+export type WorkspaceStep = z.infer<typeof workspaceStepSchema>;
+export type WindowMatch = z.infer<typeof matchSchema>;
 export type DockItem = z.infer<typeof dockItemSchema>;
 export type DockConfig = z.infer<typeof dockConfigSchema>;
 

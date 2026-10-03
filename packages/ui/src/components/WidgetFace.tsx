@@ -1,5 +1,5 @@
-import { BatteryCharging, BatteryFull, Music, Pause } from "lucide-react";
-import { useBattery, useNowPlaying, useSystemStats } from "../hooks/useInfoFeeds";
+import { BatteryCharging, BatteryFull, Music, Pause, Volume2, VolumeX } from "lucide-react";
+import { useAudio, useBattery, useNowPlaying, useSystemStats } from "../hooks/useInfoFeeds";
 import type { WidgetKind } from "../lib/overlay";
 import { ClockWidget } from "./ClockWidget";
 
@@ -8,6 +8,7 @@ export const WIDGET_LABEL: Record<WidgetKind, string> = {
   "system-stats": "System load",
   battery: "Battery",
   "now-playing": "Now playing",
+  volume: "Volume",
 };
 
 const pct = (n: number) => `${Math.round(n)}%`;
@@ -23,6 +24,8 @@ export function WidgetFace({ widget, active }: { widget: WidgetKind; active: boo
       return <BatteryFace active={active} />;
     case "now-playing":
       return <MediaFace active={active} />;
+    case "volume":
+      return <VolumeFace active={active} />;
   }
 }
 
@@ -52,4 +55,15 @@ function BatteryFace({ active }: { active: boolean }) {
 function MediaFace({ active }: { active: boolean }) {
   const m = useNowPlaying(active);
   return m?.playing ? <Music size={22} /> : <Pause size={22} className={m ? "" : "opacity-40"} />;
+}
+
+function VolumeFace({ active }: { active: boolean }) {
+  const a = useAudio(active);
+  if (!a) return <Volume2 size={22} className="opacity-40" />;
+  return (
+    <span className="flex flex-col items-center text-sm font-semibold tabular-nums">
+      {a.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+      {Math.round(a.volume * 100)}
+    </span>
+  );
 }

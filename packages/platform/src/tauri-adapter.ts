@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type {
+  AudioState,
   BlurMode,
   DockConfig,
   DockGeometry,
@@ -16,6 +17,8 @@ import type {
   BatteryInfo,
   LaunchItem,
   PathInfo,
+  PixelRect,
+  Placement,
   Unsubscribe,
   WindowInfo,
 } from "@glass-dock/shared";
@@ -103,6 +106,26 @@ export class TauriAdapter implements PlatformAPI {
     const t = setInterval(tick, 1500);
     return () => clearInterval(t);
   }
+
+  // Audio
+  getAudio = () => invoke<AudioState>("get_audio");
+  setVolume = (volume: number) => invoke<void>("set_volume", { volume });
+  setMuted = (target: "output" | "input", muted: boolean) =>
+    invoke<void>("set_muted", { input: target === "input", muted });
+
+  // Window layout
+  capturePlacement = (hwnd: string) => invoke<Placement | null>("capture_placement", { hwnd });
+  placeWindow = (hwnd: string, placement: Placement) =>
+    invoke<void>("place_window", { hwnd, placement });
+
+  // Previews
+  showThumbnail = (hwnd: string, rect: PixelRect) => invoke<void>("show_thumbnail", { hwnd, rect });
+  hideThumbnails = () => invoke<void>("hide_thumbnails");
+
+  // System
+  getAutostart = () => invoke<boolean>("get_autostart");
+  setAutostart = (on: boolean) => invoke<void>("set_autostart", { on });
+  exportConfig = (json: string) => invoke<string>("export_config", { json });
 
   // Dock shell
   setBlurMode = (mode: BlurMode) => invoke<void>("set_blur_mode", { mode });

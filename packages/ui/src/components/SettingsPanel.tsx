@@ -1,14 +1,22 @@
 import { X } from "lucide-react";
 import { useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
+import { DataRows, PresetRows } from "./SettingsData";
 import { HotkeyRows, MonitorRows, WidgetRows } from "./SettingsExtras";
+import { WorkspaceRows } from "./SettingsWorkspaces";
 
 export const SETTINGS_SIZE = { w: 440, h: 480 };
 
 const fixed = (d: number) => (v: number) => v.toFixed(d).replace(".", ",");
 
 /** Every change applies immediately, so the dock behind the panel is the live preview. */
-export function SettingsPanel({ close }: { close: () => void }) {
+export function SettingsPanel({
+  close,
+  run,
+}: {
+  close: () => void;
+  run: (id: string, target: string | null) => void;
+}) {
   const config = useDock((s) => s.config);
   const edit = useDock((s) => s.edit);
   const { dock, appearance } = config;
@@ -155,8 +163,11 @@ export function SettingsPanel({ close }: { close: () => void }) {
             />
           </Row>
         </Section>
+        <PresetRows />
         <WidgetRows />
+        <WorkspaceRows run={run} />
         <HotkeyRows />
+        <DataRows />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import type { WindowInfo } from "@glass-dock/shared";
-import { SNAP_LAYOUTS, ACTION_IDS, snapActionId } from "./actions";
+import type { WindowInfo, Workspace } from "@glass-dock/shared";
+import { SNAP_LAYOUTS, ACTION_IDS, snapActionId, wsActionId } from "./actions";
 import type { Entry } from "./entries";
 
 export interface PaletteItem {
@@ -27,6 +27,7 @@ export function buildPaletteItems(
   entries: Entry[],
   windows: WindowInfo[],
   hasTarget: boolean,
+  workspaces: Workspace[] = [],
 ): PaletteItem[] {
   const items: PaletteItem[] = [];
   for (const e of entries) {
@@ -49,7 +50,22 @@ export function buildPaletteItems(
       run: { type: "window", hwnd: w.hwnd },
     });
   }
+  for (const w of workspaces)
+    items.push({
+      id: `ws:${w.id}`,
+      title: `Workspace: ${w.name}`,
+      subtitle: `${w.steps.length} steps`,
+      group: "Action",
+      run: { type: "action", actionId: wsActionId(w.id) },
+    });
   items.push(
+    {
+      id: "act:switcher",
+      title: "Window switcher",
+      subtitle: "All windows by app",
+      group: "Action",
+      run: { type: "action", actionId: ACTION_IDS.switcher },
+    },
     {
       id: "act:settings",
       title: "Open settings",

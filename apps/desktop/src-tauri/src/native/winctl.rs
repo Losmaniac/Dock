@@ -1,5 +1,8 @@
 //! Window control actions (AGENTS.md 5.2, phase 2).
-use dock_core::layout::{apply_insets, map_between_areas, opacity_to_alpha, snap_rect, Insets, Rect, SnapLayout};
+use dock_core::layout::{
+    apply_insets, from_fractions, map_between_areas, opacity_to_alpha, snap_rect, to_fractions, Fractions,
+    Insets, Rect, SnapLayout,
+};
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -33,7 +36,7 @@ fn frame_insets(hwnd: HWND) -> Insets {
     }
 }
 
-fn place(hwnd: HWND, visible_target: Rect) -> DockResult<()> {
+fn place_inner(hwnd: HWND, visible_target: Rect) -> DockResult<()> {
     let r = apply_insets(visible_target, frame_insets(hwnd));
     // SAFETY: plain calls; a maximized window must be restored first or it ignores the move.
     unsafe {
@@ -52,7 +55,7 @@ pub fn snap(hwnd: HWND, layout: SnapLayout) -> DockResult<()> {
         unsafe { let _ = ShowWindow(hwnd, SW_MAXIMIZE); }
         return Ok(());
     }
-    place(hwnd, snap_rect(mon.work, layout))
+    place_inner(hwnd, snap_rect(mon.work, layout))
 }
 
 pub fn move_to_monitor(hwnd: HWND, monitor_id: &str) -> DockResult<()> {
@@ -112,4 +115,39 @@ pub fn set_opacity(hwnd: HWND, value: f64) -> DockResult<()> {
         SetLayeredWindowAttributes(hwnd, windows::Win32::Foundation::COLORREF(0), opacity_to_alpha(value), LWA_ALPHA)?;
     }
     Ok(())
+}
+
+/// Where a window sits, relative to the work area of the monitor it is on.
+pub struct Placement {
+    pub monitor_id: String,
+    pub fractions: Fractions,
+    pub maximized: bool,
+}
+
+pub fn capture(hwnd: HWND) -> Option<Placement> {
+    let mon = monitors::of_window(hwnd)?;
+    let mut r = RECT::default();
+    // SAFETY: valid out pointer.
+    let maximized = unsafe {
+        GetWindowRect(hwnd, &mut r).ok()?;
+        IsZoomed(hwnd).as_bool()
+    };
+    // Store the *visible* frame (without the invisible resize borders) so restoring it
+    // through `place_inner`, which re-adds the borders, does not drift.
+    let i = frame_insets(hwnd);
+    let outer = monitors::rect(r);
+    let visible = Rect::new(outer.x + i.left, outer.y + i.top, outer.w - i.left - i.right, outer.h - i.top - i.bottom);
+    Some(Placement { monitor_id: mon.id, fractions: to_fractions(visible, mon.work), maximized })
+}
+
+pub fn place(hwnd: HWND, monitor_id: &str, f: Fractions, maximized: bool) -> DockResult<()> {
+    let mon = monitors::resolve(monitor_id).ok_or_else(|| DockError::OsError("no monitors".into()))?;
+    if maximized {
+        // Move to the right monitor first, then maximize there.
+        place(hwnd, monitor_id, f, false)?;
+        // SAFETY: plain call.
+        unsafe { let _ = ShowWindow(hwnd, SW_MAXIMIZE); }
+        return Ok(());
+    }
+    place_inner(hwnd, from_fractions(f, mon.work))
 }

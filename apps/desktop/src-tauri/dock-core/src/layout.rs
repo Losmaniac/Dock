@@ -35,6 +35,8 @@ pub enum DockMode {
     Rest,
     /// Window also covers the magnification headroom while the pointer is over the dock.
     Active,
+    /// Covers the whole monitor (window switcher overlay).
+    Fullscreen,
 }
 
 pub const HOT_EDGE: i32 = 4;
@@ -49,6 +51,9 @@ pub fn dock_rect(
     margin: i32,
     mode: DockMode,
 ) -> Rect {
+    if mode == DockMode::Fullscreen {
+        return area;
+    }
     let horizontal = matches!(pos, Position::Bottom | Position::Top);
     let along_max = if horizontal { area.w } else { area.h };
     let length = length.clamp(1, along_max);
@@ -123,6 +128,46 @@ pub fn map_between_areas(r: Rect, from: Rect, to: Rect) -> Rect {
         to.y + ((r.y - from.y) as f64 * sy).round() as i32,
         ((r.w as f64) * sx).round() as i32,
         ((r.h as f64) * sy).round() as i32,
+    )
+}
+
+/// Largest rectangle with the source aspect ratio that fits inside `dest`, centered.
+/// Used so a DWM thumbnail is never stretched.
+pub fn fit_rect(src_w: i32, src_h: i32, dest: Rect) -> Rect {
+    if src_w <= 0 || src_h <= 0 || dest.w <= 0 || dest.h <= 0 {
+        return dest;
+    }
+    let scale = (dest.w as f64 / src_w as f64).min(dest.h as f64 / src_h as f64);
+    let (w, h) = ((src_w as f64 * scale).round() as i32, (src_h as f64 * scale).round() as i32);
+    Rect::new(dest.x + (dest.w - w) / 2, dest.y + (dest.h - h) / 2, w, h)
+}
+
+/// A window rectangle as fractions of a monitor work area, so a saved layout survives
+/// resolution and monitor changes.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Fractions {
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
+}
+
+pub fn to_fractions(r: Rect, work: Rect) -> Fractions {
+    let (ww, wh) = (work.w.max(1) as f64, work.h.max(1) as f64);
+    Fractions {
+        x: (r.x - work.x) as f64 / ww,
+        y: (r.y - work.y) as f64 / wh,
+        w: r.w as f64 / ww,
+        h: r.h as f64 / wh,
+    }
+}
+
+pub fn from_fractions(f: Fractions, work: Rect) -> Rect {
+    Rect::new(
+        work.x + (f.x * work.w as f64).round() as i32,
+        work.y + (f.y * work.h as f64).round() as i32,
+        (f.w * work.w as f64).round() as i32,
+        (f.h * work.h as f64).round() as i32,
     )
 }
 
@@ -238,6 +283,32 @@ mod tests {
         let half = snap_rect(from, SnapLayout::RightHalf);
         let moved = map_between_areas(half, from, to);
         assert_eq!(moved, snap_rect(to, SnapLayout::RightHalf));
+    }
+
+    #[test]
+    fn fullscreen_mode_covers_the_whole_area() {
+        let r = dock_rect(WORK, Position::Bottom, 600, 100, 8, DockMode::Fullscreen);
+        assert_eq!(r, WORK);
+    }
+
+    #[test]
+    fn thumbnails_keep_aspect_ratio_and_center() {
+        let dest = Rect::new(10, 10, 200, 200);
+        let r = fit_rect(1600, 900, dest);
+        assert_eq!((r.w, r.h), (200, 113));
+        assert_eq!(r.x, 10);
+        assert_eq!(r.y, 10 + (200 - 113) / 2);
+        assert_eq!(fit_rect(0, 0, dest), dest);
+    }
+
+    #[test]
+    fn fractions_round_trip_across_resolutions() {
+        let a = Rect::new(0, 0, 1920, 1040);
+        let r = Rect::new(480, 260, 960, 520);
+        let f = to_fractions(r, a);
+        assert_eq!(from_fractions(f, a), r);
+        let b = Rect::new(1920, 0, 2560, 1400);
+        assert_eq!(from_fractions(f, b), Rect::new(1920 + 640, 350, 1280, 700));
     }
 
     #[test]

@@ -9,20 +9,27 @@ import { ContextMenu, MENU_ROW, menuRows } from "./ContextMenu";
 import { FolderStack, STACK_SIZE } from "./FolderStack";
 import { PropertiesPanel, PROPS_SIZE } from "./PropertiesPanel";
 import { SETTINGS_SIZE, SettingsPanel } from "./SettingsPanel";
+import { Switcher } from "./Switcher";
 import { WIDGET_SIZE, WidgetPanel } from "./WidgetPanel";
 
-export const sizeOf = (o: Open): Overlay =>
-  o.kind === "settings"
-    ? SETTINGS_SIZE
-    : o.kind === "stack"
-      ? STACK_SIZE
-      : o.kind === "props"
-        ? PROPS_SIZE
-        : o.kind === "palette"
-          ? PALETTE_SIZE
-          : o.kind === "widget"
-            ? WIDGET_SIZE
-            : { w: 240, h: 48 + (menuRows(o.actions) + 1) * (MENU_ROW + 2) + 12 };
+export function sizeOf(o: Open): Overlay {
+  switch (o.kind) {
+    case "settings":
+      return SETTINGS_SIZE;
+    case "stack":
+      return STACK_SIZE;
+    case "props":
+      return PROPS_SIZE;
+    case "palette":
+      return PALETTE_SIZE;
+    case "widget":
+      return WIDGET_SIZE;
+    case "switcher":
+      return { w: 1, h: 1, fullscreen: true };
+    case "menu":
+      return { w: 240, h: 48 + (menuRows(o.actions) + 1) * (MENU_ROW + 2) + 12 };
+  }
+}
 
 function panelStyle(p: DockPosition, across: number): CSSProperties {
   const off = across + OVERLAY_GAP;
@@ -47,6 +54,7 @@ export function OverlayLayer(props: {
   close: () => void;
 }) {
   const { open, close } = props;
+  if (open?.kind === "switcher") return <Switcher close={close} />;
   return (
     <AnimatePresence>
       {open && (
@@ -64,7 +72,7 @@ export function OverlayLayer(props: {
             {open.kind === "menu" && (
               <ContextMenu title={open.title} actions={open.actions} close={close} />
             )}
-            {open.kind === "settings" && <SettingsPanel close={close} />}
+            {open.kind === "settings" && <SettingsPanel close={close} run={props.runAction} />}
             {open.kind === "stack" && <FolderStack item={open.item} close={close} />}
             {open.kind === "widget" && <WidgetPanel widget={open.widget} close={close} />}
             {open.kind === "palette" && (

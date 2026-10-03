@@ -2,6 +2,7 @@ import { motion, Reorder, type MotionValue } from "framer-motion";
 import { Globe, Settings } from "lucide-react";
 import { forwardRef } from "react";
 import type { DockConfig } from "@glass-dock/shared";
+import { totalBadge } from "../lib/badge";
 import { itemKey, type Entry } from "../lib/entries";
 import { isHorizontal } from "../lib/geometry";
 import type { AppEntry } from "../lib/overlay";
@@ -27,6 +28,7 @@ interface Props {
   openSettings: () => void;
   removeItem: (id: string) => void;
   openFolder: (path: string) => void;
+  onHover: (entry: AppEntry, center: number | null) => void;
 }
 
 const HIDE = { bottom: { y: 160 }, top: { y: -160 }, left: { x: -160 }, right: { x: 160 } };
@@ -57,6 +59,8 @@ export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
         running={e.windows.length > 0}
         focused={e.windows.some((w) => w.focused)}
         minimized={e.windows.length > 0 && e.windows.every((w) => w.minimized)}
+        badge={totalBadge(e.windows.map((w) => w.title))}
+        onHover={(c) => p.onHover(e, c)}
         onClick={() => p.activate(e)}
         onAux={() => p.newInstance(e)}
         onContext={() => p.openMenu(label, p.menuFor(e))}

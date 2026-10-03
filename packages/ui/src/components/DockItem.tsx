@@ -17,6 +17,9 @@ export interface DockItemProps {
   running?: boolean;
   focused?: boolean;
   minimized?: boolean;
+  badge?: number;
+  /** Item center along the bar axis (viewport px) while hovered; null when the pointer leaves. */
+  onHover?: (center: number | null) => void;
   onClick: () => void;
   onAux?: () => void;
   onContext?: () => void;
@@ -58,6 +61,11 @@ export function DockItem(p: DockItemProps) {
   return (
     <div
       data-item-id={p.id}
+      onPointerEnter={() => {
+        const b = ref.current?.getBoundingClientRect();
+        if (b) p.onHover?.(horizontal ? b.left + b.width / 2 : b.top + b.height / 2);
+      }}
+      onPointerLeave={() => p.onHover?.(null)}
       className={`group relative flex items-center ${horizontal ? "flex-col" : "flex-row"}`}
     >
       <span
@@ -91,6 +99,14 @@ export function DockItem(p: DockItemProps) {
         ) : (
           <span className="flex h-full w-full items-center justify-center overflow-hidden whitespace-nowrap rounded-item bg-white/10 text-lg">
             {p.fallback ?? p.label.slice(0, 1).toUpperCase()}
+          </span>
+        )}
+        {(p.badge ?? 0) > 0 && (
+          <span
+            aria-label={`${p.badge} unread`}
+            className="absolute -left-1 -top-1 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] leading-4 text-white"
+          >
+            {p.badge}
           </span>
         )}
         {(p.windowCount ?? 0) > 1 && (

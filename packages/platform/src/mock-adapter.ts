@@ -3,6 +3,7 @@
  * Nothing in this file talks to an OS.
  */
 import type {
+  AudioState,
   BatteryInfo,
   BlurMode,
   DockConfig,
@@ -10,6 +11,8 @@ import type {
   DockPosition,
   FolderEntry,
   PathInfo,
+  PixelRect,
+  Placement,
   IconSource,
   MediaAction,
   MonitorInfo,
@@ -223,6 +226,49 @@ export class MockAdapter implements PlatformAPI {
   onNowPlaying(cb: (m: MediaInfo | null) => void): Unsubscribe {
     void this.getNowPlaying().then(cb);
     return () => {};
+  }
+
+  private audio: AudioState = { volume: 0.4, muted: false, micMuted: false };
+  getAudio = () => Promise.resolve({ ...this.audio });
+  setVolume = (volume: number) => {
+    this.audio.volume = Math.min(1, Math.max(0, volume));
+    return Promise.resolve();
+  };
+  setMuted = (target: "output" | "input", muted: boolean) => {
+    if (target === "output") this.audio.muted = muted;
+    else this.audio.micMuted = muted;
+    return Promise.resolve();
+  };
+
+  capturePlacement = (_hwnd: string): Promise<Placement | null> =>
+    Promise.resolve({
+      monitorId: "\\\\.\\DISPLAY1",
+      x: 0.1,
+      y: 0.1,
+      w: 0.5,
+      h: 0.6,
+      maximized: false,
+    });
+  placeWindow = (_hwnd: string, _p: Placement) => Promise.resolve();
+
+  showThumbnail = (_hwnd: string, _rect: PixelRect) => Promise.resolve();
+  hideThumbnails = () => Promise.resolve();
+
+  private autostart = false;
+  getAutostart = () => Promise.resolve(this.autostart);
+  setAutostart = (on: boolean) => {
+    this.autostart = on;
+    return Promise.resolve();
+  };
+  /** Web demo: triggers a browser download. */
+  exportConfig(json: string): Promise<string> {
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "glass-dock-config.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    return Promise.resolve("your downloads folder");
   }
 
   mediaControl = (_action: MediaAction) => Promise.resolve();

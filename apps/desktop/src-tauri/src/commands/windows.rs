@@ -1,4 +1,5 @@
-use dock_core::layout::SnapLayout;
+use dock_core::layout::{Fractions, SnapLayout};
+use serde::{Deserialize, Serialize};
 
 use crate::error::DockResult;
 use crate::native::windows_list::{self as wl, WindowInfo};
@@ -55,4 +56,37 @@ pub fn set_window_opacity(hwnd: String, value: f64) -> DockResult<()> {
 #[tauri::command(async)]
 pub fn get_monitors() -> Vec<monitors::Monitor> {
     monitors::list()
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlacementDto {
+    pub monitor_id: String,
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
+    pub maximized: bool,
+}
+
+/// Saved-workspace support: where a window currently sits (fractions of the monitor work area).
+#[tauri::command(async)]
+pub fn capture_placement(hwnd: String) -> DockResult<Option<PlacementDto>> {
+    let h = wl::to_hwnd(&hwnd)?;
+    Ok(winctl::capture(h).map(|p| PlacementDto {
+        monitor_id: p.monitor_id,
+        x: p.fractions.x,
+        y: p.fractions.y,
+        w: p.fractions.w,
+        h: p.fractions.h,
+        maximized: p.maximized,
+    }))
+}
+
+#[tauri::command(async)]
+pub fn place_window(hwnd: String, placement: PlacementDto) -> DockResult<()> {
+    let h = wl::to_hwnd(&hwnd)?;
+    wl::ensure_controllable(h)?;
+    let f = Fractions { x: placement.x, y: placement.y, w: placement.w, h: placement.h };
+    winctl::place(h, &placement.monitor_id, f, placement.maximized)
 }

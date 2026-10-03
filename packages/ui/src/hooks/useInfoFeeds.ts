@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { BatteryInfo, MediaInfo, SystemStats } from "@glass-dock/shared";
+import type { AudioState, BatteryInfo, MediaInfo, SystemStats } from "@glass-dock/shared";
 import type { PlatformAPI } from "@glass-dock/platform";
 import { useDock } from "../store/dockStore";
 
@@ -70,6 +70,26 @@ export function useNowPlaying(active: boolean): MediaInfo | null {
   useEffect(() => (active ? platform.onNowPlaying(setM) : undefined), [active, platform]);
   return m;
 }
+
+/** Output volume / mic mute. Polled every 2 s only while a volume widget is visible. */
+export function useAudioState(active: boolean): [AudioState | null, (a: AudioState) => void] {
+  const platform = useDock((s) => s.platform)!;
+  const [a, setA] = useState<AudioState | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const tick = () =>
+      void platform
+        .getAudio()
+        .then(setA)
+        .catch(() => setA(null));
+    tick();
+    const t = setInterval(tick, 2000);
+    return () => clearInterval(t);
+  }, [active, platform]);
+  return [a, setA];
+}
+
+export const useAudio = (active: boolean): AudioState | null => useAudioState(active)[0];
 
 export const formatRate = (bytes: number): string => {
   const units = ["B/s", "KB/s", "MB/s", "GB/s"];

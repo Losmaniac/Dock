@@ -5,7 +5,7 @@ export interface GeometryInput {
   autoHide: boolean;
   revealed: boolean;
   hovered: boolean;
-  overlay: { w: number; h: number } | null;
+  overlay: { w: number; h: number; fullscreen?: boolean } | null;
   /** Measured layout size of the dock bar. */
   nav: { w: number; h: number };
   iconSize: number;
@@ -36,9 +36,12 @@ export function computeGeometry(i: GeometryInput): DockGeometry {
   if (i.autoHide && !i.revealed && !i.overlay) {
     return { ...base, mode: "hidden", length: along, thickness: across };
   }
+  if (i.overlay?.fullscreen) {
+    return { ...base, mode: "fullscreen", length: along, thickness: across };
+  }
   if (i.overlay) {
     // The panel direction follows the dock: it grows away from the screen edge.
-    const overlayAlong = horizontal ? i.overlay.w : i.overlay.w;
+    const overlayAlong = i.overlay.w;
     return {
       ...base,
       mode: "active",

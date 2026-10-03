@@ -88,9 +88,35 @@ export interface MonitorInfo {
   scale: number;
 }
 
+export interface AudioState {
+  /** 0..1 master output volume. */
+  volume: number;
+  muted: boolean;
+  /** null when there is no capture device. */
+  micMuted: boolean | null;
+}
+
+/** Window position as fractions of the work area of the monitor it is on. */
+export interface Placement {
+  monitorId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  maximized: boolean;
+}
+
+/** Physical pixels relative to the dock window's client area. */
+export interface PixelRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export type MediaAction = "play-pause" | "next" | "previous";
 
-export type DockMode = "hidden" | "rest" | "active";
+export type DockMode = "hidden" | "rest" | "active" | "fullscreen";
 
 /** Sizes in CSS pixels, measured by the frontend. */
 export interface DockGeometry {

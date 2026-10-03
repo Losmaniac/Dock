@@ -16,6 +16,11 @@ use tauri::Manager;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // A second launch just brings the existing dock back.
+            visibility::show_for_user(app);
+        }))
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             commands::shell::set_blur_mode,
@@ -35,6 +40,16 @@ fn main() {
             commands::system::get_now_playing,
             commands::system::media_control,
             commands::system::register_hotkey,
+            commands::system::get_audio,
+            commands::system::set_volume,
+            commands::system::set_muted,
+            commands::system::show_thumbnail,
+            commands::system::hide_thumbnails,
+            commands::system::get_autostart,
+            commands::system::set_autostart,
+            commands::windows::capture_placement,
+            commands::windows::place_window,
+            config::export_config,
             commands::launcher::launch,
             commands::launcher::get_icon,
             commands::launcher::describe_path,

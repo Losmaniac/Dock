@@ -41,6 +41,11 @@ describe("computeGeometry", () => {
     expect(computeGeometry({ ...base, reserveSpace: true, autoHide: true }).reserve).toBe(0);
   });
 
+  it("covers the monitor for the window switcher", () =>
+    expect(computeGeometry({ ...base, overlay: { w: 1, h: 1, fullscreen: true } }).mode).toBe(
+      "fullscreen",
+    ));
+
   it("swaps axes for side docks", () =>
     expect(computeGeometry({ ...base, position: "left" })).toMatchObject({
       length: 80,
