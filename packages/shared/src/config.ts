@@ -157,6 +157,8 @@ export const dockConfigSchema = z.object({
       switcher: z.string().default("Ctrl+Alt+W"),
       /** Moves keyboard focus into the dock so it can be used without a mouse. */
       focusDock: z.string().default("Ctrl+Alt+Home"),
+      /** Opens the launcher (all apps, recent files, document search). */
+      launcher: z.string().default("Ctrl+Alt+Space"),
       /** Snap layout -> accelerator, for example `{ "left-half": "Ctrl+Alt+Left" }`. */
       snap: z.record(z.string()).default({}),
     })

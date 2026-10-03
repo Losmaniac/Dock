@@ -103,6 +103,7 @@ export function Dock() {
           menuFor={actions.menuFor}
           openMenu={(title, list) => setOpen({ kind: "menu", title, actions: list })}
           openSettings={() => setOpen({ kind: "settings" })}
+          openLauncher={() => setOpen({ kind: "launcher" })}
           removeItem={unpin}
           openFolder={(path) => actions.run(platform.launch({ type: "folder", path }))}
         />

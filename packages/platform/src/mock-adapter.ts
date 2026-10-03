@@ -5,6 +5,9 @@
 import type {
   AudioState,
   BatteryInfo,
+  DocHit,
+  RecentFile,
+  StartApp,
   DiskInfo,
   NetworkInfo,
   TemperatureReading,
@@ -217,6 +220,26 @@ export class MockAdapter implements PlatformAPI {
     };
   }
 
+  getStartApps = (): Promise<StartApp[]> =>
+    Promise.resolve([
+      ...MOCK_APPS.map((a) => ({ name: a.label, path: a.path, aumid: null, category: "Apps" })),
+      { name: "Paint", path: "C:\\Mock\\Paint.lnk", aumid: null, category: "Accessories" },
+      { name: "Calculator", path: "C:\\Mock\\Calc.lnk", aumid: null, category: "Accessories" },
+      { name: "Photos", path: null, aumid: "Mock.Photos!App", category: "Store apps" },
+      { name: "Word", path: "C:\\Mock\\Word.lnk", aumid: null, category: "Office" },
+    ]);
+  getRecentFiles = (): Promise<RecentFile[]> =>
+    Promise.resolve([
+      { name: "Quarterly report.docx", path: "C:\\Mock\\Quarterly report.docx", isDir: false },
+      { name: "Budget.xlsx", path: "C:\\Mock\\Budget.xlsx", isDir: false },
+      { name: "Projects", path: "C:\\Mock\\Projects", isDir: true },
+    ]);
+  searchDocuments = (query: string): Promise<DocHit[]> =>
+    Promise.resolve(
+      ["Report draft.docx", "Report final.pdf", "Holiday photos", "notes.txt"]
+        .filter((n) => n.toLowerCase().includes(query.trim().toLowerCase()))
+        .map((n) => ({ name: n, path: `C:\\Mock\\${n}`, isDir: !n.includes(".") })),
+    );
   describePath = (path: string): Promise<PathInfo> =>
     Promise.resolve({ kind: "file", label: path.split(/[\\/]/).pop() ?? path, path, args: [] });
   listFolder = (_path: string): Promise<FolderEntry[]> =>

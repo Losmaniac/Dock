@@ -169,6 +169,13 @@ export function HotkeyRows() {
           onCommit={(v) => edit((d) => void (d.hotkeys.commandPalette = v))}
         />
       </Row>
+      <Row label="Launcher">
+        <AccelInput
+          label="Launcher"
+          value={hk.launcher}
+          onCommit={(v) => edit((d) => void (d.hotkeys.launcher = v))}
+        />
+      </Row>
       <Row label="Window switcher">
         <AccelInput
           label="Window switcher"

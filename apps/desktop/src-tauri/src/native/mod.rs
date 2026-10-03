@@ -1,5 +1,6 @@
 //! Win32 wrappers. Every `unsafe` block states the invariant it relies on.
 pub mod appbar;
+pub mod catalog;
 pub mod audio;
 pub mod icons;
 pub mod media;

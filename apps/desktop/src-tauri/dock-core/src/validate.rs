@@ -84,3 +84,23 @@ mod image_tests {
         assert_eq!(sniff_image_mime(b""), None);
     }
 }
+
+/// Page part of an `ms-settings:` link, e.g. `display` or `network-wifi`. Empty means the
+/// Settings home page. Only lowercase letters, digits and `-` are allowed.
+pub fn is_valid_settings_page(p: &str) -> bool {
+    p.len() <= 64 && p.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+#[cfg(test)]
+mod settings_tests {
+    use super::is_valid_settings_page;
+
+    #[test]
+    fn only_plain_page_names() {
+        assert!(is_valid_settings_page(""));
+        assert!(is_valid_settings_page("network-wifi"));
+        assert!(!is_valid_settings_page("display?x=1"));
+        assert!(!is_valid_settings_page("../x"));
+        assert!(!is_valid_settings_page("Display"));
+    }
+}

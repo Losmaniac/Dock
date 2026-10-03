@@ -1,6 +1,9 @@
 import type {
   AudioState,
   BatteryInfo,
+  DocHit,
+  RecentFile,
+  StartApp,
   DiskInfo,
   NetworkInfo,
   TemperatureReading,
@@ -45,6 +48,10 @@ export interface PlatformAPI {
   onHotkey(cb: (actionId: string) => void): Unsubscribe;
   /** Classify a dropped path and resolve .lnk shortcuts. */
   describePath(path: string): Promise<PathInfo>;
+  /** Launcher catalog: Start Menu + Store apps, recent files, and a bounded file-name index. */
+  getStartApps(): Promise<StartApp[]>;
+  getRecentFiles(): Promise<RecentFile[]>;
+  searchDocuments(query: string): Promise<DocHit[]>;
   listFolder(path: string): Promise<FolderEntry[]>;
   /** Files dropped on the dock window; `point` is in CSS pixels. */
   onFilesDropped(cb: (paths: string[], point: { x: number; y: number }) => void): Unsubscribe;

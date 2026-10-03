@@ -10,6 +10,7 @@ export type Open =
   | { kind: "settings" }
   | { kind: "palette"; target: string | null }
   | { kind: "switcher" }
+  | { kind: "launcher" }
   | { kind: "widget"; itemId: string }
   | { kind: "stack"; item: Extract<DockItem, { type: "folder" }> }
   | { kind: "props"; entry: AppEntry };
@@ -19,4 +20,5 @@ export const needsKeyboard = (o: Open | null, keyboardMode = false, widgetKeyboa
   widgetKeyboard ||
   o?.kind === "settings" ||
   o?.kind === "palette" ||
-  o?.kind === "switcher";
+  o?.kind === "switcher" ||
+  o?.kind === "launcher";

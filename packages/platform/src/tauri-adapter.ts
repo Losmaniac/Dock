@@ -15,6 +15,9 @@ import type {
   SnapLayout,
   SystemStats,
   BatteryInfo,
+  DocHit,
+  RecentFile,
+  StartApp,
   DiskInfo,
   NetworkInfo,
   TemperatureReading,
@@ -64,6 +67,9 @@ export class TauriAdapter implements PlatformAPI {
   // Launcher
   launch = (item: LaunchItem) => invoke<void>("launch", { item });
   getIcon = (source: IconSource) => invoke<string>("get_icon", { source });
+  getStartApps = () => invoke<StartApp[]>("get_start_apps");
+  getRecentFiles = () => invoke<RecentFile[]>("get_recent_files");
+  searchDocuments = (query: string) => invoke<DocHit[]>("search_documents", { query });
   describePath = (path: string) => invoke<PathInfo>("describe_path", { path });
   listFolder = (path: string): Promise<FolderEntry[]> => invoke("list_folder", { path });
   registerHotkey = (accelerator: string, actionId: string) =>

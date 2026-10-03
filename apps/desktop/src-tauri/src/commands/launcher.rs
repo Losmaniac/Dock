@@ -18,6 +18,8 @@ pub enum LaunchItem {
     File { path: String },
     Url { url: String },
     Uwp { aumid: String },
+    /// `ms-settings:<page>`; an empty page opens Windows Settings.
+    Settings { #[serde(default)] page: String },
 }
 
 fn shell_open(target: &str) -> DockResult<()> {
@@ -71,6 +73,12 @@ pub fn launch(item: LaunchItem) -> DockResult<()> {
                 return Err(DockError::InvalidArgument("only http, https and mailto links can be opened".into()));
             }
             shell_open(url.trim())
+        }
+        LaunchItem::Settings { page } => {
+            if !validate::is_valid_settings_page(&page) {
+                return Err(DockError::InvalidArgument("invalid settings page".into()));
+            }
+            shell_open(&format!("ms-settings:{page}"))
         }
         LaunchItem::Uwp { aumid } => {
             if !validate::is_valid_aumid(&aumid) {
@@ -176,4 +184,30 @@ pub fn list_folder(path: String) -> DockResult<Vec<FolderEntry>> {
     out.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
     out.truncate(60);
     Ok(out)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocHit {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+}
+
+#[tauri::command(async)]
+pub fn get_start_apps() -> Vec<crate::native::catalog::StartApp> {
+    crate::native::catalog::start_apps()
+}
+
+#[tauri::command(async)]
+pub fn get_recent_files() -> DockResult<Vec<crate::native::catalog::RecentFile>> {
+    crate::native::catalog::recent_files()
+}
+
+#[tauri::command(async)]
+pub fn search_documents(query: String) -> Vec<DocHit> {
+    crate::native::catalog::search_documents(&query)
+        .into_iter()
+        .map(|e| DocHit { name: e.name, path: e.path, is_dir: e.is_dir })
+        .collect()
 }

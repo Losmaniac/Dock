@@ -1,5 +1,5 @@
 import { motion, Reorder, type MotionValue } from "framer-motion";
-import { Globe, Settings } from "lucide-react";
+import { Globe, LayoutGrid, Settings } from "lucide-react";
 import { forwardRef } from "react";
 import type { DockConfig } from "@glass-dock/shared";
 import { totalBadge } from "../lib/badge";
@@ -27,6 +27,7 @@ interface Props {
   openMenu: (title: string, actions: MenuAction[]) => void;
   menuFor: (e: AppEntry) => MenuAction[];
   openSettings: () => void;
+  openLauncher: () => void;
   removeItem: (id: string) => void;
   openFolder: (path: string) => void;
   onHover: (entry: AppEntry, center: number | null) => void;
@@ -176,6 +177,14 @@ export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
       </Reorder.Group>
       {p.running.length > 0 && divider}
       {p.running.map((e) => (e.kind === "running" ? <div key={e.id}>{app(e)}</div> : null))}
+      <button
+        aria-label="Launcher"
+        onClick={p.openLauncher}
+        style={{ width: gear, height: gear }}
+        className="flex items-center justify-center rounded-item opacity-70 hover:bg-white/15 hover:opacity-100"
+      >
+        <LayoutGrid size={gear * 0.55} />
+      </button>
       <button
         aria-label="Settings"
         onClick={p.openSettings}

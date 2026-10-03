@@ -43,7 +43,8 @@ export type LaunchItem =
   | { type: "folder"; path: string }
   | { type: "file"; path: string }
   | { type: "url"; url: string }
-  | { type: "uwp"; aumid: string };
+  | { type: "uwp"; aumid: string }
+  | { type: "settings"; page?: string };
 
 export type IconSource = { path: string } | { aumid: string };
 
@@ -137,6 +138,27 @@ export interface DockGeometry {
 
 export type DockPosition = "bottom" | "top" | "left" | "right";
 export type BlurMode = "mica" | "acrylic" | "blur" | "none";
+
+export interface StartApp {
+  name: string;
+  /** Shortcut path for classic apps. */
+  path?: string | null;
+  /** AppUserModelID for Store apps. */
+  aumid?: string | null;
+  category: string;
+}
+
+export interface RecentFile {
+  name: string;
+  path: string;
+  isDir: boolean;
+}
+
+export interface DocHit {
+  name: string;
+  path: string;
+  isDir: boolean;
+}
 
 export interface DiskInfo {
   mount: string;

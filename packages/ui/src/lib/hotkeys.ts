@@ -12,6 +12,7 @@ export function desiredHotkeys(
   if (h.commandPalette) out[ACTION_IDS.palette] = h.commandPalette;
   if (h.switcher) out[ACTION_IDS.switcher] = h.switcher;
   if (h.focusDock) out[ACTION_IDS.focusDock] = h.focusDock;
+  if (h.launcher) out[ACTION_IDS.launcher] = h.launcher;
   for (const w of workspaces) if (w.hotkey) out[wsActionId(w.id)] = w.hotkey;
   if (h.jumpModifier) for (let n = 1; n <= 9; n++) out[jumpActionId(n)] = `${h.jumpModifier}+${n}`;
   for (const { layout } of SNAP_LAYOUTS) {
