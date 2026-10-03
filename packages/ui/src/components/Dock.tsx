@@ -9,6 +9,8 @@ import { useDockActions } from "../hooks/useDockActions";
 import { useDockGeometry } from "../hooks/useDockGeometry";
 import { useFileDrop } from "../hooks/useFileDrop";
 import { useHotkeys } from "../hooks/useHotkeys";
+import { useWallpaper } from "../hooks/useWallpaper";
+import { effectiveAppearance } from "../lib/wallpaper";
 import { usePreview } from "../hooks/usePreview";
 import { useEntryIcons, useShellSync } from "../hooks/useShellSync";
 import { useDock } from "../store/dockStore";
@@ -29,7 +31,9 @@ const ALIGN: Record<DockPosition, string> = {
 export function Dock() {
   const platform = useDock((s) => s.platform)!;
   const { config, windows, icons, ready, open, setOpen, reorder, unpin } = useDock();
-  const { dock, appearance } = config;
+  const { dock } = config;
+  const wallpaper = useWallpaper(config.appearance.accentFromWallpaper);
+  const appearance = effectiveAppearance(config.appearance, wallpaper);
   const horizontal = isHorizontal(dock.position);
   const closeOverlay = useCallback(() => setOpen(null), [setOpen]);
   const navRef = useRef<HTMLElement>(null);
@@ -72,6 +76,7 @@ export function Dock() {
     <div
       className={`flex h-full w-full overflow-hidden ${ALIGN[dock.position]} ${appearance.solid ? "solid" : ""}`}
       data-theme={appearance.theme}
+      data-finish={appearance.finish}
       style={themeVars(appearance) as CSSProperties}
     >
       <div className="relative">

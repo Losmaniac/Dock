@@ -53,3 +53,34 @@ mod tests {
         assert!(!is_plain_absolute_windows_path("\\\\?\\C:\\x"));
     }
 }
+
+/// MIME type from the first bytes of an image file; `None` for anything else, so a wallpaper
+/// path that points at a non-image is never handed to the webview.
+pub fn sniff_image_mime(b: &[u8]) -> Option<&'static str> {
+    if b.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        Some("image/jpeg")
+    } else if b.starts_with(&[0x89, b'P', b'N', b'G']) {
+        Some("image/png")
+    } else if b.starts_with(b"BM") {
+        Some("image/bmp")
+    } else if b.len() > 12 && &b[0..4] == b"RIFF" && &b[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
+#[cfg(test)]
+mod image_tests {
+    use super::sniff_image_mime;
+
+    #[test]
+    fn recognizes_common_wallpaper_formats_only() {
+        assert_eq!(sniff_image_mime(&[0xFF, 0xD8, 0xFF, 0xE0]), Some("image/jpeg"));
+        assert_eq!(sniff_image_mime(b"\x89PNG\r\n"), Some("image/png"));
+        assert_eq!(sniff_image_mime(b"BM6\0"), Some("image/bmp"));
+        assert_eq!(sniff_image_mime(b"RIFF\0\0\0\0WEBPVP8 "), Some("image/webp"));
+        assert_eq!(sniff_image_mime(b"MZ\x90\0"), None);
+        assert_eq!(sniff_image_mime(b""), None);
+    }
+}

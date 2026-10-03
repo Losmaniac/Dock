@@ -120,6 +120,8 @@ export class TauriAdapter implements PlatformAPI {
     invoke<void>("switch_virtual_desktop", { direction });
   getMediaCover = () => invoke<string | null>("get_media_cover");
 
+  getWallpaper = () => invoke<string | null>("get_wallpaper");
+
   // Audio
   getAudio = () => invoke<AudioState>("get_audio");
   setVolume = (volume: number) => invoke<void>("set_volume", { volume });

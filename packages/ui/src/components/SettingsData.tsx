@@ -1,27 +1,54 @@
 import { useEffect, useRef, useState } from "react";
 import { defaultConfig } from "@glass-dock/shared";
 import { exportJson, importJson } from "../lib/configFile";
-import { PRESETS, applyPreset } from "../lib/presets";
+import { FINISH_LABEL, THEMES, applyTheme } from "../lib/themes";
 import { messageOf, useDock } from "../store/dockStore";
 import { Row, Section, Toggle } from "./controls";
 
 const btn = "rounded-lg bg-white/15 px-3 py-1 text-sm hover:bg-white/25";
 
-export function PresetRows() {
+export function ThemeGallery() {
   const setConfig = useDock((s) => s.setConfig);
+  const edit = useDock((s) => s.edit);
+  const a = useDock((s) => s.config.appearance);
   return (
-    <Section title="Presets">
-      <div className="flex gap-2 py-1">
-        {PRESETS.map((p) => (
+    <Section title="Themes">
+      <div className="grid grid-cols-3 gap-2 py-1">
+        {THEMES.map((t) => (
           <button
-            key={p.id}
-            className={btn}
-            onClick={() => setConfig(applyPreset(useDock.getState().config, p))}
+            key={t.id}
+            title={t.blurb}
+            aria-pressed={a.themeId === t.id}
+            onClick={() => setConfig(applyTheme(useDock.getState().config, t))}
+            className={`flex flex-col items-center gap-1 rounded-lg p-1.5 text-xs hover:bg-white/15 ${a.themeId === t.id ? "ring-2 ring-accent" : ""}`}
           >
-            {p.name}
+            <span
+              className="h-8 w-full rounded-md border border-white/30"
+              style={{ background: `linear-gradient(135deg, ${t.swatch[0]}, ${t.swatch[1]})` }}
+            />
+            {t.name}
           </button>
         ))}
       </div>
+      <Row label="Finish">
+        <span className="flex gap-1">
+          {(Object.keys(FINISH_LABEL) as (keyof typeof FINISH_LABEL)[]).map((f) => (
+            <button
+              key={f}
+              className={`${btn} ${a.finish === f ? "bg-accent text-white" : ""}`}
+              onClick={() => edit((d) => void (d.appearance.finish = f))}
+            >
+              {FINISH_LABEL[f]}
+            </button>
+          ))}
+        </span>
+      </Row>
+      <Row label="Accent from wallpaper">
+        <Toggle
+          value={a.accentFromWallpaper}
+          onChange={(v) => edit((d) => void (d.appearance.accentFromWallpaper = v))}
+        />
+      </Row>
     </Section>
   );
 }

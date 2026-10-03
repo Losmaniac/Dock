@@ -67,6 +67,9 @@ export interface PlatformAPI {
   /** Album art of the current media session as a data URL, or null. */
   getMediaCover(): Promise<string | null>;
 
+  /** Current desktop wallpaper as a data URL, or null (solid colour, slideshow, unreadable). */
+  getWallpaper(): Promise<string | null>;
+
   // Audio
   getAudio(): Promise<AudioState>;
   setVolume(volume: number): Promise<void>;

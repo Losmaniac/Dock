@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
-import { DataRows, PresetRows } from "./SettingsData";
+import { DataRows, ThemeGallery } from "./SettingsData";
 import { HotkeyRows, IntegrationRows, MonitorRows, WidgetRows } from "./SettingsExtras";
 import { WorkspaceRows } from "./SettingsWorkspaces";
 
@@ -163,7 +163,7 @@ export function SettingsPanel({
             />
           </Row>
         </Section>
-        <PresetRows />
+        <ThemeGallery />
         <WidgetRows />
         <IntegrationRows />
         <WorkspaceRows run={run} />

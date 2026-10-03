@@ -152,3 +152,8 @@ pub fn switch_virtual_desktop(direction: String) -> DockResult<()> {
 pub fn get_media_cover() -> DockResult<Option<String>> {
     media::cover()
 }
+
+#[tauri::command(async)]
+pub fn get_wallpaper() -> DockResult<Option<String>> {
+    crate::native::wallpaper::current()
+}

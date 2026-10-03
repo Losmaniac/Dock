@@ -9,6 +9,15 @@ describe("theme", () => {
     const v = themeVars(defaultConfig().appearance);
     expect(v["--glass-bg"]).toBe("rgba(255, 255, 255, 0.12)");
     expect(v["--glass-blur"]).toBe("24px");
+    expect(v["--glass-saturate"]).toBe("180%");
     expect(v["--radius-dock"]).toBe("22px");
+  });
+  it("reshapes blur and tint per finish", () => {
+    const base = defaultConfig().appearance;
+    const frosted = themeVars({ ...base, finish: "frosted" });
+    const clear = themeVars({ ...base, finish: "clear" });
+    expect(parseInt(frosted["--glass-blur"]!)).toBeGreaterThan(24);
+    expect(parseInt(clear["--glass-blur"]!)).toBeLessThan(24);
+    expect(frosted["--glass-bg"]).toContain("0.192");
   });
 });

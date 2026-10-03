@@ -41,6 +41,7 @@ fn main() {
             commands::system::media_control,
             commands::system::register_hotkey,
             commands::system::fetch_text,
+            commands::system::get_wallpaper,
             commands::system::get_disks,
             commands::system::get_uptime,
             commands::system::get_temperatures,

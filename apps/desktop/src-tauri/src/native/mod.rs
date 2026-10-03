@@ -9,5 +9,6 @@ pub mod system;
 pub mod thumbs;
 pub mod winctl;
 pub mod vdesk;
+pub mod wallpaper;
 pub mod wifi;
 pub mod windows_list;

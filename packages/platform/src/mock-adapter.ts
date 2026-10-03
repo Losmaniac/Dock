@@ -278,6 +278,12 @@ export class MockAdapter implements PlatformAPI {
   };
   getMediaCover = () => Promise.resolve<string | null>(null);
 
+  /** Web demo: a drawn gradient stands in for a wallpaper. */
+  getWallpaper(): Promise<string | null> {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="36"><defs><linearGradient id="g"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs><rect width="64" height="36" fill="url(#g)"/></svg>`;
+    return Promise.resolve(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+  }
+
   private audio: AudioState = { volume: 0.4, muted: false, micMuted: false };
   getAudio = () => Promise.resolve({ ...this.audio });
   setVolume = (volume: number) => {

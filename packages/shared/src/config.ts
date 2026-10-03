@@ -121,6 +121,11 @@ export const dockConfigSchema = z.object({
   appearance: z
     .object({
       theme: z.enum(["system", "light", "dark"]).default("system"),
+      /** Id of the chosen look from the theme gallery (see ui/lib/themes.ts). */
+      themeId: z.string().default("auto"),
+      finish: z.enum(["glass", "frosted", "clear"]).default("glass"),
+      /** Take the accent (and, for the Wallpaper theme, the tint) from the desktop wallpaper. */
+      accentFromWallpaper: z.boolean().default(false),
       blurMode: z.enum(["mica", "acrylic", "blur", "none"]).default("mica"),
       blurStrength: z.number().min(0).max(64).default(24),
       tint: hexColor.default("#ffffff"),
