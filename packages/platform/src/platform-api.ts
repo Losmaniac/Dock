@@ -70,6 +70,8 @@ export interface PlatformAPI {
   getTemperatures(): Promise<TemperatureReading[]>; // often empty on Windows
   getNetwork(): Promise<NetworkInfo>;
   getVirtualDesktops(): Promise<VirtualDesktops>;
+  /** BCP-47 tag of the keyboard layout used by the foreground window, for example "en-US". */
+  getKeyboardLanguage(): Promise<string>;
   switchVirtualDesktop(direction: "left" | "right"): Promise<void>;
   /** Album art of the current media session as a data URL, or null. */
   getMediaCover(): Promise<string | null>;
@@ -112,6 +114,8 @@ export interface PlatformAPI {
   // Config
   /** Another dock window saved the config; adopt it. Fires for all windows, including the saver. */
   onConfigChanged(cb: (cfg: DockConfig) => void): Unsubscribe;
+  /** Which dock this window shows: from its window label (or the URL in the web demo); null = main. */
+  windowDockId(): string | null;
   /** Make the set of extra dock windows (everything after the first dock) match `dockIds`. */
   syncDockWindows(dockIds: string[]): Promise<void>;
   loadConfig(): Promise<DockConfig>;

@@ -76,6 +76,16 @@ export function Launcher({ close }: { close: () => void }) {
     }
   }, [flat, loadIcon]);
 
+  const pin = (a: StartApp) => {
+    if (a.aumid) useDock.getState().pinRunning(a.name, `uwp:${a.aumid}`, a.aumid);
+    else if (a.path)
+      platform
+        .describePath(a.path)
+        .then((info) => useDock.getState().pinPath({ ...info, label: a.name }))
+        .catch((e) => report(messageOf(e)));
+    report(`${a.name} pinned.`);
+  };
+
   const run = (r: Row | undefined) => {
     if (!r) return;
     close();
@@ -165,7 +175,7 @@ export function Launcher({ close }: { close: () => void }) {
                   aria-selected={i === index}
                   onMouseEnter={() => setIndex(i)}
                   onClick={() => run(r)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-sm ${i === index ? "bg-white/20" : ""}`}
+                  className={`group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-sm ${i === index ? "bg-white/20" : ""}`}
                 >
                   {icon ? (
                     <img src={icon} alt="" className="h-7 w-7 shrink-0" draggable={false} />
@@ -176,6 +186,18 @@ export function Launcher({ close }: { close: () => void }) {
                   <span className="max-w-[45%] shrink-0 truncate text-xs opacity-60">
                     {r.subtitle}
                   </span>
+                  {r.kind === "app" && (
+                    <button
+                      aria-label={`Pin ${r.title} to dock`}
+                      className="shrink-0 rounded bg-white/15 px-1.5 text-[11px] opacity-0 hover:bg-white/30 group-hover:opacity-100 focus:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pin(r.app);
+                      }}
+                    >
+                      Pin
+                    </button>
+                  )}
                 </div>
               );
             })}

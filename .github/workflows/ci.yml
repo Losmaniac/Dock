@@ -17,6 +17,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build:web
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
   core:
     runs-on: ubuntu-latest
     steps:

@@ -6,6 +6,7 @@ import {
   useNetwork,
   useSystemStats,
   useTemperatures,
+  useKeyboardLanguage,
 } from "../hooks/useInfoFeeds";
 import { formatBytes } from "../lib/timefmt";
 import { messageOf, useDock } from "../store/dockStore";
@@ -168,6 +169,38 @@ export function DesktopsPanel() {
       <Note>
         Switching sends the Windows shortcut Win+Ctrl+Left or Right. Creating or closing desktops is
         left to Windows.
+      </Note>
+    </div>
+  );
+}
+
+const REGION = new Intl.DisplayNames(undefined, { type: "language" });
+const nameOf = (tag: string) => {
+  try {
+    return REGION.of(tag) ?? tag;
+  } catch {
+    return tag;
+  }
+};
+
+export function LanguageFace({ active }: FaceProps) {
+  const tag = useKeyboardLanguage(active);
+  return (
+    <Stack>
+      <Big>{tag ? tag.split("-")[0]!.toUpperCase() : "–"}</Big>
+      <Small>keyboard</Small>
+    </Stack>
+  );
+}
+
+export function LanguagePanel() {
+  const tag = useKeyboardLanguage(true);
+  return (
+    <div className="space-y-2">
+      <div className="text-2xl font-semibold">{tag ? nameOf(tag) : "Unknown"}</div>
+      <Note>
+        Layout of the window you are typing in ({tag || "n/a"}). Change it with Win+Space or
+        Alt+Shift; Windows does not let other apps switch it.
       </Note>
     </div>
   );

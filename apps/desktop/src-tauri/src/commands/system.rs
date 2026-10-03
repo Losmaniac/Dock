@@ -164,3 +164,8 @@ pub fn get_wallpaper() -> DockResult<Option<String>> {
 pub fn set_taskbar_hidden(on: bool) -> DockResult<()> {
     crate::native::taskbar::set_hidden(on)
 }
+
+#[tauri::command(async)]
+pub fn get_keyboard_language() -> String {
+    crate::native::input::keyboard_language()
+}

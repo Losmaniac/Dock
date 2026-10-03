@@ -23,6 +23,8 @@ import {
 import {
   DesktopsFace,
   DesktopsPanel,
+  LanguageFace,
+  LanguagePanel,
   NetworkFace,
   NetworkPanel,
   StorageFace,
@@ -162,6 +164,13 @@ export const WIDGETS: Record<WidgetKind, WidgetDef> = {
     Face: DesktopsFace,
     Panel: DesktopsPanel,
     panel: { w: 300, h: 210 },
+  },
+  language: {
+    label: "Keyboard language",
+    group: "System",
+    Face: LanguageFace,
+    Panel: LanguagePanel,
+    panel: { w: 300, h: 180 },
   },
   volume: {
     label: "Volume",

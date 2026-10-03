@@ -2,6 +2,7 @@ import { MotionConfig } from "framer-motion";
 import { useEffect } from "react";
 import type { PlatformAPI } from "@glass-dock/platform";
 import { Dock } from "./components/Dock";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useDock } from "./store/dockStore";
 
 export function App({
@@ -15,7 +16,9 @@ export function App({
   useEffect(() => useDock.getState().init(platform, dockId), [platform, dockId]);
   return attached ? (
     <MotionConfig reducedMotion="user">
-      <Dock />
+      <ErrorBoundary platform={platform}>
+        <Dock />
+      </ErrorBoundary>
     </MotionConfig>
   ) : null;
 }

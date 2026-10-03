@@ -1,6 +1,6 @@
 import { motion, Reorder, type MotionValue } from "framer-motion";
 import { Globe, LayoutGrid, Settings } from "lucide-react";
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import type { DockDef } from "@glass-dock/shared";
 import { totalBadge } from "../lib/badge";
 import { itemKey, type Entry } from "../lib/entries";
@@ -38,6 +38,7 @@ interface Props {
 const HIDE = { bottom: { y: 160 }, top: { y: -160 }, left: { x: -160 }, right: { x: 160 } };
 
 export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
+  const [bouncing, setBouncing] = useState<string | null>(null);
   const { dock } = p;
   const horizontal = isHorizontal(dock.position);
   const common = {
@@ -65,7 +66,15 @@ export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
         minimized={e.windows.length > 0 && e.windows.every((w) => w.minimized)}
         badge={totalBadge(e.windows.map((w) => w.title))}
         onHover={(c) => p.onHover(e, c)}
-        onClick={() => p.activate(e)}
+        bouncing={bouncing === e.id}
+        onClick={() => {
+          // Starting an app that is not running: hop for a moment so the click feels acknowledged.
+          if (e.windows.length === 0) {
+            setBouncing(e.id);
+            setTimeout(() => setBouncing((cur) => (cur === e.id ? null : cur)), 2200);
+          }
+          p.activate(e);
+        }}
         onAux={() => p.newInstance(e)}
         onContext={() => p.openMenu(label, p.menuFor(e))}
       />

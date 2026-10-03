@@ -57,6 +57,7 @@ fn main() {
             commands::system::media_control,
             commands::system::register_hotkey,
             commands::system::fetch_text,
+            commands::system::get_keyboard_language,
             commands::system::set_taskbar_hidden,
             commands::system::get_wallpaper,
             commands::system::get_disks,

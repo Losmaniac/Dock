@@ -22,6 +22,7 @@ export const WIDGET_KINDS = [
   "now-playing",
   "turntable",
   "virtual-desktops",
+  "language",
   "calendar",
   "weather",
   "stocks",
@@ -141,6 +142,8 @@ export const dockConfigSchema = z.object({
     .object({
       /** Hide the native Windows taskbar. A guard process restores it if the dock crashes. */
       hideTaskbar: z.boolean().default(false),
+      /** The welcome panel was shown and dismissed. Existing (migrated) users never see it. */
+      onboarded: z.boolean().default(false),
     })
     .default({}),
   appearance: z
@@ -221,7 +224,7 @@ export function migrateConfig(raw: unknown): unknown {
     ...rest,
     version: 2,
     docks: [{ id: newId(), name: "Main dock", ...dockFields, items }],
-    system: { hideTaskbar: hideTaskbar === true },
+    system: { hideTaskbar: hideTaskbar === true, onboarded: true },
   };
 }
 

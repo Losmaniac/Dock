@@ -81,6 +81,12 @@ export function Dock() {
       .catch((e) => useDock.getState().report(e));
   }, [platform, isMain, ready, extraKey]);
 
+  const onboarded = config.system.onboarded;
+  useEffect(() => {
+    if (isMain && ready && !onboarded && useDock.getState().open === null)
+      setOpen({ kind: "welcome" });
+  }, [isMain, ready, onboarded, setOpen]);
+
   if (!ready || isOrphan(config, dockId)) return null;
   const across = horizontal ? geo.nav.h : geo.nav.w;
 

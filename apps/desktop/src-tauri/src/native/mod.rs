@@ -3,6 +3,7 @@ pub mod appbar;
 pub mod catalog;
 pub mod audio;
 pub mod icons;
+pub mod input;
 pub mod media;
 pub mod monitors;
 pub mod shortcut;

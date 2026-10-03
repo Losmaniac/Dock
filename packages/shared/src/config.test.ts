@@ -9,6 +9,7 @@ describe("config schema", () => {
     expect(cfg.docks[0]!.magnification).toBe(1.6);
     expect(cfg.docks[0]!.items).toEqual([]);
     expect(cfg.system.hideTaskbar).toBe(false);
+    expect(cfg.system.onboarded).toBe(false);
   });
 
   it("accepts docks with every item type", () => {
@@ -93,6 +94,7 @@ describe("v1 -> v2 migration", () => {
       docks: Record<string, unknown>[];
     };
     expect(m.system.hideTaskbar).toBe(true);
+    expect((m.system as unknown as { onboarded: boolean }).onboarded).toBe(true);
     expect("hideTaskbar" in m.docks[0]!).toBe(false);
     expect("monitors" in m.docks[0]!).toBe(false);
   });

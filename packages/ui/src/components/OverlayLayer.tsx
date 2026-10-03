@@ -9,6 +9,7 @@ import { findItem } from "../lib/docks";
 import { useDock } from "../store/dockStore";
 import { ContextMenu, MENU_ROW, menuRows } from "./ContextMenu";
 import { LAUNCHER_SIZE, Launcher } from "./Launcher";
+import { WELCOME_SIZE, Welcome } from "./Welcome";
 import { FolderStack, STACK_SIZE } from "./FolderStack";
 import { PropertiesPanel, PROPS_SIZE } from "./PropertiesPanel";
 import { SETTINGS_SIZE, SettingsPanel } from "./SettingsPanel";
@@ -31,6 +32,8 @@ export function sizeOf(o: Open): Overlay {
     }
     case "launcher":
       return LAUNCHER_SIZE;
+    case "welcome":
+      return WELCOME_SIZE;
     case "switcher":
       return { w: 1, h: 1, fullscreen: true };
     case "menu":
@@ -80,6 +83,7 @@ export function OverlayLayer(props: {
               <ContextMenu title={open.title} actions={open.actions} close={close} />
             )}
             {open.kind === "launcher" && <Launcher close={close} />}
+            {open.kind === "welcome" && <Welcome close={close} />}
             {open.kind === "settings" && <SettingsPanel close={close} run={props.runAction} />}
             {open.kind === "stack" && <FolderStack item={open.item} close={close} />}
             {open.kind === "widget" && <WidgetPanel itemId={open.itemId} close={close} />}

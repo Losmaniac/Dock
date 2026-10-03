@@ -11,6 +11,7 @@ export type Open =
   | { kind: "palette"; target: string | null }
   | { kind: "switcher" }
   | { kind: "launcher" }
+  | { kind: "welcome" }
   | { kind: "widget"; itemId: string }
   | { kind: "stack"; item: Extract<DockItem, { type: "folder" }> }
   | { kind: "props"; entry: AppEntry };

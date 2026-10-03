@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type {
   AudioState,
@@ -122,6 +123,7 @@ export class TauriAdapter implements PlatformAPI {
   getUptime = () => invoke<number>("get_uptime");
   getTemperatures = () => invoke<TemperatureReading[]>("get_temperatures");
   getNetwork = () => invoke<NetworkInfo>("get_network");
+  getKeyboardLanguage = () => invoke<string>("get_keyboard_language");
   getVirtualDesktops = () => invoke<VirtualDesktops>("get_virtual_desktops");
   switchVirtualDesktop = (direction: "left" | "right") =>
     invoke<void>("switch_virtual_desktop", { direction });
@@ -169,6 +171,11 @@ export class TauriAdapter implements PlatformAPI {
       }
     });
   }
+  /** Extra dock windows are labelled `dock-<id>`; the main window is just `main`. */
+  windowDockId = (): string | null => {
+    const label = getCurrentWebviewWindow().label;
+    return label.startsWith("dock-") ? label.slice("dock-".length) : null;
+  };
   syncDockWindows = (dockIds: string[]) => invoke<void>("sync_dock_windows", { dockIds });
   loadConfig = async (): Promise<DockConfig> =>
     loadConfigFromRaw(await invoke<string | null>("load_config"), () =>

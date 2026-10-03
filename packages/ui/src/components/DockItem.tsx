@@ -20,6 +20,8 @@ export interface DockItemProps {
   badge?: number;
   /** Widget tiles can be twice as wide as an icon. */
   wide?: boolean;
+  /** Hops while an app is starting. */
+  bouncing?: boolean;
   /** Item center along the bar axis (viewport px) while hovered; null when the pointer leaves. */
   onHover?: (center: number | null) => void;
   onClick: () => void;
@@ -28,6 +30,14 @@ export interface DockItemProps {
 }
 
 const RADIUS = 140;
+
+/** Hop away from the screen edge and back, along the axis perpendicular to the dock. */
+function bounceAnimation(pos: DockPosition, size: number) {
+  const dist = Math.round(size * 0.45);
+  const toward = pos === "top" || pos === "left" ? dist : -dist; // away from the edge
+  const frames = [0, toward, 0, toward / 2, 0];
+  return isHorizontal(pos) ? { y: frames } : { x: frames };
+}
 const ORIGIN: Record<DockPosition, string> = {
   bottom: "50% 100%",
   top: "50% 0%",
@@ -112,6 +122,8 @@ export function DockItem(p: DockItemProps) {
           transformOrigin: ORIGIN[p.position],
         }}
         whileTap={{ scale: 0.92 }}
+        animate={p.bouncing && !reduced ? bounceAnimation(p.position, p.size) : { y: 0, x: 0 }}
+        transition={p.bouncing ? { duration: 0.7, repeat: 2, ease: "easeOut" } : undefined}
         className="relative rounded-item outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {p.icon ? (

@@ -58,14 +58,22 @@ export const messageOf = (e: unknown): string =>
 const uid = () => crypto.randomUUID();
 
 export const useDock = create<DockState>((set, get) => {
+  const saveNow = () => {
+    clearTimeout(saveTimer);
+    saveTimer = undefined;
+    get()
+      .platform?.saveConfig(get().config)
+      .catch((e) => get().report(e));
+  };
   const save = () => {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      get()
-        .platform?.saveConfig(get().config)
-        .catch((e) => get().report(e));
-    }, 400);
+    saveTimer = setTimeout(saveNow, 400);
   };
+  // A change made just before the window closes or reloads must not be lost to the debounce.
+  const flush = () => {
+    if (saveTimer !== undefined) saveNow();
+  };
+  const onVisibility = () => document.visibilityState === "hidden" && flush();
 
   return {
     platform: null,
@@ -90,9 +98,21 @@ export const useDock = create<DockState>((set, get) => {
       const off = platform.onWindowsChanged((windows) => set({ windows }));
       const offMon = platform.onMonitorsChanged((monitors) => set({ monitors }));
       // Another dock window saved a change: adopt it without saving again (no echo loop).
-      const offCfg = platform.onConfigChanged((config) => alive && set({ config }));
+      const offCfg = platform.onConfigChanged((incoming) => {
+        if (!alive) return;
+        // Our own pending edits win (they will be broadcast when saved), and an echo of what we
+        // already have is a no-op. Without this, dragging a slider could jump back to an older value.
+        if (saveTimer !== undefined) return;
+        if (JSON.stringify(incoming) === JSON.stringify(get().config)) return;
+        set({ config: incoming });
+      });
+      window.addEventListener("pagehide", flush);
+      document.addEventListener("visibilitychange", onVisibility);
       return () => {
         alive = false;
+        flush();
+        window.removeEventListener("pagehide", flush);
+        document.removeEventListener("visibilitychange", onVisibility);
         off();
         offMon();
         offCfg();

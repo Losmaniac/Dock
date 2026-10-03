@@ -120,6 +120,10 @@ export const useNetwork = (active: boolean) => {
   const platform = useDock((s) => s.platform)!;
   return usePolled(() => platform.getNetwork(), 5000, active);
 };
+export const useKeyboardLanguage = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getKeyboardLanguage(), 1000, active);
+};
 export const useDesktops = (active: boolean) => {
   const platform = useDock((s) => s.platform)!;
   return usePolled(() => platform.getVirtualDesktops(), 1500, active);

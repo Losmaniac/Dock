@@ -1,35 +1,39 @@
 # Glass Dock
 
-Glassmorphism dock and window-control layer for Windows 10/11 (Tauri 2 + React). The spec and
-roadmap are in `AGENTS.md`; decisions are in `docs/adr/`.
+A glassmorphism dock and window-control layer for Windows 10/11, built with Tauri 2, Rust and
+React. Spec: `AGENTS.md`. Decisions: `docs/adr/`.
 
 ```sh
 pnpm install
 pnpm dev:web        # interactive demo with the mock adapter (any OS)
-pnpm dev:desktop    # Tauri shell (Windows, needs Rust + WebView2)
-pnpm lint && pnpm typecheck && pnpm test && pnpm build:web
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml -p dock-core   # pure logic, any OS
+pnpm dev:desktop    # the real app (Windows, needs Rust + WebView2 + MSVC build tools)
+
+pnpm lint && pnpm typecheck && pnpm test        # TypeScript checks and unit tests
+pnpm build:web && pnpm test:e2e                 # browser end-to-end tests (Playwright)
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml -p dock-core   # pure Rust logic, any OS
 ```
+
+## What it does
+
+- **Docks:** several docks, each on its own monitor and edge, with magnification, auto-hide,
+  drag to pin and reorder, running apps merged with pinned ones, live window previews, badges.
+- **Window control:** focus, minimize, close, snap layouts, move to monitor, always on top,
+  opacity, window switcher, saved workspaces and action chains.
+- **Launcher and palette:** apps by Start Menu category, Store apps, recent files, document
+  search, Windows settings pages; a keyboard command palette with fuzzy search.
+- **Widgets (36):** clock (digital or analog), calendar, stopwatch, focus timer, countdown, world
+  clock, calculator, to-do, sticky note, system load, battery, uptime, storage, network and Wi-Fi,
+  temperature (when the PC exposes it), volume and mic, now playing, record player, virtual
+  desktops, keyboard language, next calendar event, weather, stocks, crypto, currency (ECB),
+  market overview, AI provider shortcuts. Each is compact or wide.
+- **Looks:** nine themes, glass / frosted / clear finishes, accent from your wallpaper.
+- **Taskbar:** optionally hide the native taskbar; it is restored on exit and after a crash.
+- **Privacy:** no telemetry, no account. The only network use is the online widgets you add
+  (calendar link, weather, stocks, crypto, currency), and only while they are visible.
 
 ## Status
 
-Phases 0 to 4 are implemented. **Everything Windows-specific compiles but has not been run on
-Windows**: see "Not verified" below.
-
-| Area                                                                          | State                                      |
-| ----------------------------------------------------------------------------- | ------------------------------------------ |
-| Dock, running windows, focus / minimize / close, icons, drag to pin / reorder | Implemented                                |
-| Snap, move to monitor, always on top, opacity                                 | Implemented                                |
-| CPU / RAM / disk / network, battery, now playing, volume                      | Implemented                                |
-| Hotkeys, command palette, window switcher, workspaces and action chains       | Implemented                                |
-| Hover previews (DWM thumbnails), notification badges                          | Implemented (badges are a title heuristic) |
-| AppBar space reservation, fullscreen hiding, single monitor choice            | Implemented, off or automatic              |
-| Presets, import / export, autostart, NSIS + MSI installers                    | Implemented, installers unsigned           |
-| Calendar (ICS) and weather widgets                                            | Implemented, opt-in                        |
-| Dock on every monitor, pin to all virtual desktops, auto-update               | **Not implemented** (ADR 003, 004, 005)    |
-
-## Not verified (needs a Windows machine)
-
-Native blur appearance, startup flash, click-through, focus stealing behavior, AppBar,
-thumbnails, SMTC, audio, hotkey conflicts, installer size, and every Section 7 budget
-(see `docs/perf.md`).
+Everything is implemented and covered by unit and browser tests, but **the Windows-specific
+parts have only been compiled, not run on Windows**. See `docs/perf.md` for the budgets that still
+need measuring, and the ADRs for what was deliberately not built (tray icon menus, pin to all
+virtual desktops, auto-update, AI usage meters).

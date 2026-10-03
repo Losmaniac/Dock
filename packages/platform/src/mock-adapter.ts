@@ -112,7 +112,11 @@ export class MockAdapter implements PlatformAPI {
         options: {},
       },
     ];
-    return { ...base, docks: [{ ...base.docks[0]!, name: "Main dock", items }] };
+    return {
+      ...base,
+      system: { ...base.system, onboarded: true },
+      docks: [{ ...base.docks[0]!, name: "Main dock", items }],
+    };
   }
 
   private emitWindows(): void {
@@ -291,6 +295,7 @@ export class MockAdapter implements PlatformAPI {
       adapters: [{ name: "Ethernet", ips: ["192.168.1.20"] }],
       wifi: { ssid: "Demo Wi-Fi", signal: 78 },
     });
+  getKeyboardLanguage = () => Promise.resolve("en-US");
   private desktop = 0;
   getVirtualDesktops = (): Promise<VirtualDesktops> =>
     Promise.resolve({ count: 3, current: this.desktop });
@@ -406,6 +411,8 @@ export class MockAdapter implements PlatformAPI {
   onConfigChanged =
     (_cb: (cfg: DockConfig) => void): Unsubscribe =>
     () => {};
+  windowDockId = (): string | null =>
+    new URLSearchParams(globalThis.location?.search ?? "").get("dock");
   syncDockWindows = (_dockIds: string[]) => Promise.resolve();
 
   loadConfig = () => Promise.resolve(structuredClone(this.config));

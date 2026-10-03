@@ -4,8 +4,10 @@ import { createPlatform } from "@glass-dock/platform";
 import { App } from "@glass-dock/ui";
 import "@glass-dock/ui/src/styles/tokens.css";
 
+const platform = createPlatform();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App platform={createPlatform()} dockId={new URLSearchParams(location.search).get("dock")} />
+    <App platform={platform} dockId={platform.windowDockId()} />
   </StrictMode>,
 );
