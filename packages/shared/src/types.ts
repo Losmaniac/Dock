@@ -64,6 +64,9 @@ export interface MediaInfo {
   title: string;
   artist: string;
   playing: boolean;
+  /** Playback position at the time of the poll; 0 when the app does not report it. */
+  positionMs: number;
+  durationMs: number;
 }
 
 export interface PathInfo {
@@ -134,3 +137,27 @@ export interface DockGeometry {
 
 export type DockPosition = "bottom" | "top" | "left" | "right";
 export type BlurMode = "mica" | "acrylic" | "blur" | "none";
+
+export interface DiskInfo {
+  mount: string;
+  name: string;
+  total: number;
+  available: number;
+  removable: boolean;
+}
+
+export interface TemperatureReading {
+  label: string;
+  celsius: number;
+}
+
+export interface NetworkInfo {
+  adapters: { name: string; ips: string[] }[];
+  wifi: { ssid: string; signal: number } | null;
+}
+
+export interface VirtualDesktops {
+  count: number;
+  /** null when Windows does not expose the current desktop. */
+  current: number | null;
+}

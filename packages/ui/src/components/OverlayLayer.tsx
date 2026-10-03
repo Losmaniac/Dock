@@ -5,12 +5,13 @@ import type { Open } from "../lib/overlay";
 import { OVERLAY_GAP } from "../lib/geometry";
 import type { Overlay } from "../hooks/useDockGeometry";
 import { CommandPalette, PALETTE_SIZE } from "./CommandPalette";
+import { useDock } from "../store/dockStore";
 import { ContextMenu, MENU_ROW, menuRows } from "./ContextMenu";
 import { FolderStack, STACK_SIZE } from "./FolderStack";
 import { PropertiesPanel, PROPS_SIZE } from "./PropertiesPanel";
 import { SETTINGS_SIZE, SettingsPanel } from "./SettingsPanel";
 import { Switcher } from "./Switcher";
-import { WIDGET_SIZE, WidgetPanel } from "./WidgetPanel";
+import { WidgetPanel, widgetPanelSize } from "./WidgetPanel";
 
 export function sizeOf(o: Open): Overlay {
   switch (o.kind) {
@@ -22,8 +23,10 @@ export function sizeOf(o: Open): Overlay {
       return PROPS_SIZE;
     case "palette":
       return PALETTE_SIZE;
-    case "widget":
-      return WIDGET_SIZE;
+    case "widget": {
+      const it = useDock.getState().config.items.find((i) => i.id === o.itemId);
+      return it?.type === "widget" ? widgetPanelSize(it.widget) : { w: 300, h: 220 };
+    }
     case "switcher":
       return { w: 1, h: 1, fullscreen: true };
     case "menu":
@@ -74,7 +77,7 @@ export function OverlayLayer(props: {
             )}
             {open.kind === "settings" && <SettingsPanel close={close} run={props.runAction} />}
             {open.kind === "stack" && <FolderStack item={open.item} close={close} />}
-            {open.kind === "widget" && <WidgetPanel widget={open.widget} close={close} />}
+            {open.kind === "widget" && <WidgetPanel itemId={open.itemId} close={close} />}
             {open.kind === "palette" && (
               <CommandPalette
                 target={open.target}

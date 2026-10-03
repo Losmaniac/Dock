@@ -88,3 +88,63 @@ pub fn battery() -> Option<Battery> {
     }
     Some(Battery { percent: p.BatteryLifePercent, charging: p.ACLineStatus == 1 })
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiskInfo {
+    pub mount: String,
+    pub name: String,
+    pub total: u64,
+    pub available: u64,
+    pub removable: bool,
+}
+
+pub fn disks() -> Vec<DiskInfo> {
+    Disks::new_with_refreshed_list()
+        .iter()
+        .map(|d| DiskInfo {
+            mount: d.mount_point().to_string_lossy().to_string(),
+            name: d.name().to_string_lossy().to_string(),
+            total: d.total_space(),
+            available: d.available_space(),
+            removable: d.is_removable(),
+        })
+        .collect()
+}
+
+pub fn uptime_secs() -> u64 {
+    System::uptime()
+}
+
+#[derive(Debug, Serialize)]
+pub struct Temperature {
+    pub label: String,
+    pub celsius: f32,
+}
+
+/// Windows exposes no temperature sensors without a driver, so this is often empty; the UI
+/// says so instead of inventing a value.
+pub fn temperatures() -> Vec<Temperature> {
+    sysinfo::Components::new_with_refreshed_list()
+        .iter()
+        .filter_map(|c| c.temperature().map(|t| Temperature { label: c.label().to_string(), celsius: t }))
+        .collect()
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Adapter {
+    pub name: String,
+    pub ips: Vec<String>,
+}
+
+pub fn adapters() -> Vec<Adapter> {
+    Networks::new_with_refreshed_list()
+        .iter()
+        .map(|(name, n)| Adapter {
+            name: name.clone(),
+            ips: n.ip_networks().iter().map(|ip| ip.addr.to_string()).filter(|a| !a.starts_with("fe80")).collect(),
+        })
+        .filter(|a| !a.ips.is_empty())
+        .collect()
+}

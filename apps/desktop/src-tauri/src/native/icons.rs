@@ -57,7 +57,7 @@ pub fn icon_data_url(source: &str, is_aumid: bool) -> DockResult<String> {
             png
         }
     };
-    Ok(format!("data:image/png;base64,{}", base64(&png)))
+    Ok(format!("data:image/png;base64,{}", dock_core::b64::encode(&png)))
 }
 
 fn extract_png(parse_name: &str) -> DockResult<Vec<u8>> {
@@ -129,17 +129,4 @@ fn unpremultiply_bgra_to_rgba(px: &mut [u8]) {
         p[1] = un(g);
         p[2] = un(b);
     }
-}
-
-fn base64(data: &[u8]) -> String {
-    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut s = String::with_capacity(data.len().div_ceil(3) * 4);
-    for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
-        s.push(T[(n >> 18) as usize & 63] as char);
-        s.push(T[(n >> 12) as usize & 63] as char);
-        s.push(if c.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
-        s.push(if c.len() > 2 { T[n as usize & 63] as char } else { '=' });
-    }
-    s
 }

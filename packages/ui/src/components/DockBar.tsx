@@ -8,7 +8,8 @@ import { isHorizontal } from "../lib/geometry";
 import type { AppEntry } from "../lib/overlay";
 import type { MenuAction } from "./ContextMenu";
 import { DockItem } from "./DockItem";
-import { WIDGET_LABEL, WidgetFace } from "./WidgetFace";
+import { useDock } from "../store/dockStore";
+import { WIDGETS } from "../widgets/registry";
 
 interface Props {
   dock: DockConfig["dock"];
@@ -79,11 +80,22 @@ export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
         <DockItem
           {...common}
           id={it.id}
-          label={WIDGET_LABEL[it.widget]}
-          fallback={<WidgetFace widget={it.widget} active={p.active} />}
+          label={WIDGETS[it.widget].label}
+          wide={it.size === "wide"}
+          fallback={(() => {
+            const Face = WIDGETS[it.widget].Face;
+            return <Face item={it} active={p.active} wide={it.size === "wide"} />;
+          })()}
           onClick={() => p.activate(e)}
           onContext={() =>
-            p.openMenu(WIDGET_LABEL[it.widget], [
+            p.openMenu(WIDGETS[it.widget].label, [
+              {
+                label: it.size === "wide" ? "Make compact" : "Make wide",
+                onSelect: () =>
+                  useDock
+                    .getState()
+                    .setWidgetSize(it.widget, it.size === "wide" ? "compact" : "wide"),
+              },
               { label: "Remove from dock", danger: true, onSelect: () => p.removeItem(it.id) },
             ])
           }

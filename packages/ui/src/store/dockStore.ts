@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import type { DockConfig, DockItem, MonitorInfo, PathInfo, WindowInfo } from "@glass-dock/shared";
-import { defaultConfig } from "@glass-dock/shared";
+import { defaultConfig, type WidgetKind } from "@glass-dock/shared";
 import type { PlatformAPI } from "@glass-dock/platform";
-import type { Open, WidgetKind } from "../lib/overlay";
+import type { Open } from "../lib/overlay";
 
 export interface Toast {
   id: number;
@@ -21,6 +21,7 @@ interface DockState {
   setKeyboardMode(on: boolean): void;
   setOpen(o: Open | null): void;
   toggleWidget(widget: WidgetKind, on: boolean): void;
+  setWidgetSize(widget: WidgetKind, size: "compact" | "wide"): void;
   icons: Record<string, string>;
   toasts: Toast[];
   init(platform: PlatformAPI): () => void;
@@ -101,10 +102,17 @@ export const useDock = create<DockState>((set, get) => {
       });
     },
 
+    setWidgetSize(widget, size) {
+      get().edit((d) => {
+        for (const i of d.items) if (i.type === "widget" && i.widget === widget) i.size = size;
+      });
+    },
+
     toggleWidget(widget, on) {
       get().edit((d) => {
         const has = d.items.some((i) => i.type === "widget" && i.widget === widget);
-        if (on && !has) d.items.push({ id: uid(), type: "widget", widget });
+        if (on && !has)
+          d.items.push({ id: uid(), type: "widget", widget, size: "compact", options: {} });
         if (!on) d.items = d.items.filter((i) => !(i.type === "widget" && i.widget === widget));
       });
     },

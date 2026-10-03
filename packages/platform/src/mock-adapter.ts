@@ -5,6 +5,10 @@
 import type {
   AudioState,
   BatteryInfo,
+  DiskInfo,
+  NetworkInfo,
+  TemperatureReading,
+  VirtualDesktops,
   BlurMode,
   DockConfig,
   DockGeometry,
@@ -84,9 +88,27 @@ export class MockAdapter implements PlatformAPI {
           args: [],
         })),
         { id: "mock-sep", type: "separator" as const },
-        { id: "mock-clock", type: "widget" as const, widget: "clock" as const },
-        { id: "mock-stats", type: "widget" as const, widget: "system-stats" as const },
-        { id: "mock-media", type: "widget" as const, widget: "now-playing" as const },
+        {
+          id: "mock-clock",
+          type: "widget" as const,
+          widget: "clock" as const,
+          size: "compact" as const,
+          options: {},
+        },
+        {
+          id: "mock-stats",
+          type: "widget" as const,
+          widget: "system-stats" as const,
+          size: "compact" as const,
+          options: {},
+        },
+        {
+          id: "mock-media",
+          type: "widget" as const,
+          widget: "now-playing" as const,
+          size: "compact" as const,
+          options: {},
+        },
       ],
     };
   }
@@ -222,11 +244,39 @@ export class MockAdapter implements PlatformAPI {
   }
   getBattery = (): Promise<BatteryInfo | null> => Promise.resolve({ percent: 78, charging: false });
   getNowPlaying = (): Promise<MediaInfo | null> =>
-    Promise.resolve({ title: "Mock Track", artist: "Mock Artist", playing: true });
+    Promise.resolve({
+      title: "Mock Track",
+      artist: "Mock Artist",
+      playing: true,
+      positionMs: Date.now() % 180_000,
+      durationMs: 180_000,
+    });
   onNowPlaying(cb: (m: MediaInfo | null) => void): Unsubscribe {
     void this.getNowPlaying().then(cb);
     return () => {};
   }
+
+  getDisks = (): Promise<DiskInfo[]> =>
+    Promise.resolve([
+      { mount: "C:\\", name: "System", total: 512e9, available: 190e9, removable: false },
+      { mount: "D:\\", name: "Data", total: 2e12, available: 1.4e12, removable: false },
+    ]);
+  getUptime = () => Promise.resolve(3 * 86_400 + 5 * 3600 + 120);
+  getTemperatures = (): Promise<TemperatureReading[]> =>
+    Promise.resolve([{ label: "CPU (demo)", celsius: 54 }]);
+  getNetwork = (): Promise<NetworkInfo> =>
+    Promise.resolve({
+      adapters: [{ name: "Ethernet", ips: ["192.168.1.20"] }],
+      wifi: { ssid: "Demo Wi-Fi", signal: 78 },
+    });
+  private desktop = 0;
+  getVirtualDesktops = (): Promise<VirtualDesktops> =>
+    Promise.resolve({ count: 3, current: this.desktop });
+  switchVirtualDesktop = (d: "left" | "right") => {
+    this.desktop = Math.min(2, Math.max(0, this.desktop + (d === "right" ? 1 : -1)));
+    return Promise.resolve();
+  };
+  getMediaCover = () => Promise.resolve<string | null>(null);
 
   private audio: AudioState = { volume: 0.4, muted: false, micMuted: false };
   getAudio = () => Promise.resolve({ ...this.audio });

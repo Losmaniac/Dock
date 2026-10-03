@@ -2,6 +2,31 @@ import { z } from "zod";
 
 export const CONFIG_VERSION = 1;
 
+export const WIDGET_KINDS = [
+  "clock",
+  "date",
+  "stopwatch",
+  "pomodoro",
+  "countdown",
+  "world-clock",
+  "calculator",
+  "todo",
+  "note",
+  "system-stats",
+  "battery",
+  "uptime",
+  "storage",
+  "network",
+  "temperature",
+  "volume",
+  "now-playing",
+  "turntable",
+  "virtual-desktops",
+  "calendar",
+  "weather",
+] as const;
+export type WidgetKind = (typeof WIDGET_KINDS)[number];
+
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 export const dockItemSchema = z.discriminatedUnion("type", [
@@ -29,15 +54,10 @@ export const dockItemSchema = z.discriminatedUnion("type", [
   z.object({
     id: z.string().min(1),
     type: z.literal("widget"),
-    widget: z.enum([
-      "clock",
-      "system-stats",
-      "battery",
-      "now-playing",
-      "volume",
-      "calendar",
-      "weather",
-    ]),
+    widget: z.enum(WIDGET_KINDS),
+    size: z.enum(["compact", "wide"]).default("compact"),
+    /** Per-widget settings and small saved state (timers, notes, todo list) as strings. */
+    options: z.record(z.string(), z.string()).default({}),
   }),
   z.object({ id: z.string().min(1), type: z.literal("separator") }),
 ]);

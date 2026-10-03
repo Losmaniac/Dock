@@ -1,6 +1,10 @@
 import type {
   AudioState,
   BatteryInfo,
+  DiskInfo,
+  NetworkInfo,
+  TemperatureReading,
+  VirtualDesktops,
   BlurMode,
   DockConfig,
   DockGeometry,
@@ -53,6 +57,15 @@ export interface PlatformAPI {
   mediaControl(action: MediaAction): Promise<void>;
   getMonitors(): Promise<MonitorInfo[]>;
   onMonitorsChanged(cb: (m: MonitorInfo[]) => void): Unsubscribe;
+
+  getDisks(): Promise<DiskInfo[]>;
+  getUptime(): Promise<number>; // seconds
+  getTemperatures(): Promise<TemperatureReading[]>; // often empty on Windows
+  getNetwork(): Promise<NetworkInfo>;
+  getVirtualDesktops(): Promise<VirtualDesktops>;
+  switchVirtualDesktop(direction: "left" | "right"): Promise<void>;
+  /** Album art of the current media session as a data URL, or null. */
+  getMediaCover(): Promise<string | null>;
 
   // Audio
   getAudio(): Promise<AudioState>;

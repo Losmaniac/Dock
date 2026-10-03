@@ -51,7 +51,7 @@ export function useDockActions() {
       const it = e.item;
       if (it.type === "folder") setOpen({ kind: "stack", item: it });
       else if (it.type === "url") run(platform.launch({ type: "url", url: it.url }));
-      else if (it.type === "widget") setOpen({ kind: "widget", widget: it.widget });
+      else if (it.type === "widget") setOpen({ kind: "widget", itemId: it.id });
     },
     [click, platform, run, setOpen],
   );

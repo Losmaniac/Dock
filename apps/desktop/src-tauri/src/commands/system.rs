@@ -111,3 +111,44 @@ pub fn fetch_text(url: String) -> DockResult<String> {
         .map_err(|e| crate::error::DockError::OsError(format!("could not read response: {e}")))?;
     Ok(body)
 }
+
+#[tauri::command(async)]
+pub fn get_disks() -> Vec<system::DiskInfo> {
+    system::disks()
+}
+
+#[tauri::command(async)]
+pub fn get_uptime() -> u64 {
+    system::uptime_secs()
+}
+
+#[tauri::command(async)]
+pub fn get_temperatures() -> Vec<system::Temperature> {
+    system::temperatures()
+}
+
+#[derive(serde::Serialize)]
+pub struct NetworkInfo {
+    pub adapters: Vec<system::Adapter>,
+    pub wifi: Option<crate::native::wifi::Wifi>,
+}
+
+#[tauri::command(async)]
+pub fn get_network() -> NetworkInfo {
+    NetworkInfo { adapters: system::adapters(), wifi: crate::native::wifi::current() }
+}
+
+#[tauri::command(async)]
+pub fn get_virtual_desktops() -> crate::native::vdesk::Desktops {
+    crate::native::vdesk::desktops()
+}
+
+#[tauri::command(async)]
+pub fn switch_virtual_desktop(direction: String) -> DockResult<()> {
+    crate::native::vdesk::switch(&direction)
+}
+
+#[tauri::command(async)]
+pub fn get_media_cover() -> DockResult<Option<String>> {
+    media::cover()
+}

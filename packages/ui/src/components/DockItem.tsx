@@ -18,6 +18,8 @@ export interface DockItemProps {
   focused?: boolean;
   minimized?: boolean;
   badge?: number;
+  /** Widget tiles can be twice as wide as an icon. */
+  wide?: boolean;
   /** Item center along the bar axis (viewport px) while hovered; null when the pointer leaves. */
   onHover?: (center: number | null) => void;
   onClick: () => void;
@@ -104,7 +106,7 @@ export function DockItem(p: DockItemProps) {
           p.onContext?.();
         }}
         style={{
-          width: p.size,
+          width: p.wide ? p.size * 2 + 8 : p.size,
           height: p.size,
           scale: smooth,
           transformOrigin: ORIGIN[p.position],

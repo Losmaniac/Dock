@@ -16,6 +16,7 @@ import { DockBar } from "./DockBar";
 import { HotEdge } from "./HotEdge";
 import { OverlayLayer, sizeOf } from "./OverlayLayer";
 import { Toasts } from "./Toasts";
+import { WIDGETS } from "../widgets/registry";
 import { WindowPreview, previewSize } from "./WindowPreview";
 
 const ALIGN: Record<DockPosition, string> = {
@@ -51,7 +52,12 @@ export function Dock() {
 
   useEntryIcons(pinned, running);
   const keyboardMode = useDock((s) => s.keyboardMode);
-  useShellSync(needsKeyboard(open, keyboardMode), closeOverlay);
+  const widgetKeyboard =
+    open?.kind === "widget" &&
+    config.items.some(
+      (i) => i.id === open.itemId && i.type === "widget" && WIDGETS[i.widget].keyboard,
+    );
+  useShellSync(needsKeyboard(open, keyboardMode, !!widgetKeyboard), closeOverlay);
   const { enter, leave } = geo;
   useEffect(() => {
     if (!keyboardMode) return leave();

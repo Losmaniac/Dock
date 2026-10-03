@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { SNAP_LAYOUTS } from "../lib/actions";
-import type { WidgetKind } from "../lib/overlay";
 import { useDock } from "../store/dockStore";
 import { Row, Section, Select, Toggle } from "./controls";
-import { WIDGET_LABEL } from "./WidgetFace";
+import { WIDGETS, WIDGET_GROUPS } from "../widgets/registry";
+import type { WidgetKind } from "@glass-dock/shared";
 
 export function MonitorRows() {
   const monitors = useDock((s) => s.monitors);
@@ -34,8 +34,6 @@ export function MonitorRows() {
     </>
   );
 }
-
-const WIDGETS = Object.keys(WIDGET_LABEL) as WidgetKind[];
 
 export function IntegrationRows() {
   const cfg = useDock((s) => s.config.integrations);
@@ -89,15 +87,35 @@ export function IntegrationRows() {
 export function WidgetRows() {
   const items = useDock((s) => s.config.items);
   const toggle = useDock((s) => s.toggleWidget);
+  const setSize = useDock((s) => s.setWidgetSize);
+  const kinds = Object.keys(WIDGETS) as WidgetKind[];
   return (
     <Section title="Widgets">
-      {WIDGETS.map((w) => (
-        <Row key={w} label={WIDGET_LABEL[w]}>
-          <Toggle
-            value={items.some((i) => i.type === "widget" && i.widget === w)}
-            onChange={(on) => toggle(w, on)}
-          />
-        </Row>
+      {WIDGET_GROUPS.map((group) => (
+        <div key={group} className="mb-2">
+          <div className="text-xs opacity-60">{group}</div>
+          {kinds
+            .filter((k) => WIDGETS[k].group === group)
+            .map((w) => {
+              const item = items.find((i) => i.type === "widget" && i.widget === w);
+              const on = item?.type === "widget";
+              return (
+                <Row key={w} label={WIDGETS[w].label}>
+                  <span className="flex items-center gap-2">
+                    {on && (
+                      <button
+                        className="rounded bg-white/15 px-2 text-xs hover:bg-white/25"
+                        onClick={() => setSize(w, item.size === "wide" ? "compact" : "wide")}
+                      >
+                        {item.size === "wide" ? "Wide" : "Compact"}
+                      </button>
+                    )}
+                    <Toggle value={on} onChange={(v) => toggle(w, v)} />
+                  </span>
+                </Row>
+              );
+            })}
+        </div>
       ))}
     </Section>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePolled } from "./usePolled";
 import type { AudioState, BatteryInfo, MediaInfo, SystemStats } from "@glass-dock/shared";
 import type { PlatformAPI } from "@glass-dock/platform";
 import { useDock } from "../store/dockStore";
@@ -100,4 +101,26 @@ export const formatRate = (bytes: number): string => {
     i++;
   }
   return `${v.toFixed(v < 10 && i > 0 ? 1 : 0).replace(".", ",")} ${units[i]}`;
+};
+
+// Slow-changing system facts. Each polls only while a widget showing it is visible.
+export const useDisks = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getDisks(), 30_000, active);
+};
+export const useUptime = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getUptime(), 30_000, active);
+};
+export const useTemperatures = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getTemperatures(), 5000, active);
+};
+export const useNetwork = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getNetwork(), 5000, active);
+};
+export const useDesktops = (active: boolean) => {
+  const platform = useDock((s) => s.platform)!;
+  return usePolled(() => platform.getVirtualDesktops(), 1500, active);
 };

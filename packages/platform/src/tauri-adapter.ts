@@ -15,6 +15,10 @@ import type {
   SnapLayout,
   SystemStats,
   BatteryInfo,
+  DiskInfo,
+  NetworkInfo,
+  TemperatureReading,
+  VirtualDesktops,
   LaunchItem,
   PathInfo,
   PixelRect,
@@ -106,6 +110,15 @@ export class TauriAdapter implements PlatformAPI {
     const t = setInterval(tick, 1500);
     return () => clearInterval(t);
   }
+
+  getDisks = () => invoke<DiskInfo[]>("get_disks");
+  getUptime = () => invoke<number>("get_uptime");
+  getTemperatures = () => invoke<TemperatureReading[]>("get_temperatures");
+  getNetwork = () => invoke<NetworkInfo>("get_network");
+  getVirtualDesktops = () => invoke<VirtualDesktops>("get_virtual_desktops");
+  switchVirtualDesktop = (direction: "left" | "right") =>
+    invoke<void>("switch_virtual_desktop", { direction });
+  getMediaCover = () => invoke<string | null>("get_media_cover");
 
   // Audio
   getAudio = () => invoke<AudioState>("get_audio");

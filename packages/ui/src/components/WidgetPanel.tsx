@@ -1,73 +1,29 @@
 import { X } from "lucide-react";
-import { formatRate, useBattery, useSystemStats } from "../hooks/useInfoFeeds";
-import type { WidgetKind } from "../lib/overlay";
-import { Sparkline } from "./Sparkline";
-import { Calendar, Media, Volume, WeatherPanel } from "./WidgetBodies";
-import { WIDGET_LABEL } from "./WidgetFace";
+import { useDock } from "../store/dockStore";
+import { WIDGETS } from "../widgets/registry";
 
-export const WIDGET_SIZE = { w: 300, h: 250 };
+const FALLBACK = { w: 300, h: 220 };
 
-const num = (n: number, d = 0) => n.toFixed(d).replace(".", ",");
+export const widgetPanelSize = (kind: keyof typeof WIDGETS) => WIDGETS[kind].panel ?? FALLBACK;
 
-export function WidgetPanel({ widget, close }: { widget: WidgetKind; close: () => void }) {
+/** Frame around a widget's own panel. The widget is looked up live so edits show immediately. */
+export function WidgetPanel({ itemId, close }: { itemId: string; close: () => void }) {
+  const item = useDock((s) => s.config.items.find((i) => i.id === itemId));
+  if (item?.type !== "widget") return null;
+  const def = WIDGETS[item.widget];
+  const size = def.panel ?? FALLBACK;
+  const Panel = def.Panel;
   return (
-    <div className="panel p-4 text-sm" style={{ width: WIDGET_SIZE.w, height: WIDGET_SIZE.h }}>
+    <div className="panel flex flex-col p-4 text-sm" style={{ width: size.w, height: size.h }}>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-semibold">{WIDGET_LABEL[widget]}</h2>
+        <h2 className="font-semibold">{def.label}</h2>
         <button aria-label="Close" onClick={close} className="rounded-lg p-1 hover:bg-white/15">
           <X size={16} />
         </button>
       </div>
-      {widget === "system-stats" && <Stats />}
-      {widget === "battery" && <Battery />}
-      {widget === "now-playing" && <Media />}
-      {widget === "clock" && <Clock />}
-      {widget === "volume" && <Volume />}
-      {widget === "calendar" && <Calendar />}
-      {widget === "weather" && <WeatherPanel />}
-    </div>
-  );
-}
-
-function Stats() {
-  const { latest, cpu, ram } = useSystemStats(true);
-  if (!latest) return <p className="opacity-60">Sampling…</p>;
-  return (
-    <div className="space-y-2">
-      <div>
-        <div className="flex justify-between">
-          <span>CPU</span>
-          <span className="tabular-nums">{num(latest.cpuPercent)} %</span>
-        </div>
-        <Sparkline values={cpu} />
-      </div>
-      <div>
-        <div className="flex justify-between">
-          <span>RAM</span>
-          <span className="tabular-nums">{num(latest.ramPercent)} %</span>
-        </div>
-        <Sparkline values={ram} color="#f59e0b" />
-      </div>
-      <div className="flex justify-between text-xs opacity-80">
-        <span>Disk {num(latest.diskPercent)} %</span>
-        <span>
-          ↑ {formatRate(latest.netUpBytesPerSec)} ↓ {formatRate(latest.netDownBytesPerSec)}
-        </span>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {Panel && <Panel item={item} close={close} />}
       </div>
     </div>
-  );
-}
-
-function Battery() {
-  const b = useBattery(true);
-  return <p>{b ? `${b.percent} %${b.charging ? " (charging)" : ""}` : "No battery detected."}</p>;
-}
-
-function Clock() {
-  const now = new Date();
-  return (
-    <p className="text-lg">
-      {new Intl.DateTimeFormat(undefined, { dateStyle: "full" }).format(now)}
-    </p>
   );
 }
