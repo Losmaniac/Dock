@@ -112,6 +112,8 @@ export const dockConfigSchema = z.object({
       autoHide: z.boolean().default(false),
       autoHideDelay: z.number().min(0).max(2000).default(150),
       reserveSpace: z.boolean().default(false),
+      /** Hide the native Windows taskbar. A guard process restores it if the dock crashes. */
+      hideTaskbar: z.boolean().default(false),
       iconSize: z.number().min(32).max(96).default(56),
       magnification: z.number().min(1).max(1.8).default(1.6),
       /** "primary" or a monitor id. Showing the dock on every monitor is not implemented (ADR 003). */

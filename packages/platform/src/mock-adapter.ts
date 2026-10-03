@@ -333,6 +333,9 @@ export class MockAdapter implements PlatformAPI {
   showThumbnail = (_hwnd: string, _rect: PixelRect) => Promise.resolve();
   hideThumbnails = () => Promise.resolve();
 
+  /** Web demo: there is no taskbar to hide. */
+  setTaskbarHidden = (_hidden: boolean) => Promise.resolve();
+
   /** Web demo: canned feeds, so no real request is made. */
   fetchText(url: string): Promise<string> {
     if (url.includes("openweathermap"))

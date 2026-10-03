@@ -89,6 +89,7 @@ pub fn start(app: AppHandle) {
                 Err(RecvTimeoutError::Timeout) => {}
                 Err(RecvTimeoutError::Disconnected) => break,
             }
+            crate::native::taskbar::enforce();
             if crate::visibility::set_fullscreen(&app, fullscreen_app_running()) {
                 let _ = app.emit("fullscreen-changed", ());
             }

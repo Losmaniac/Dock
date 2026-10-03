@@ -20,6 +20,8 @@ export function useDockGeometry(
   ready: boolean,
 ) {
   const platform = useDock((s) => s.platform);
+  // New array identity on every monitors-changed event (display layout or work area changed).
+  const monitors = useDock((s) => s.monitors);
   const [nav, setNav] = useState({ w: 0, h: 0 });
   const [hovered, setHovered] = useState(false);
   const [revealed, setRevealed] = useState(!dock.autoHide);
@@ -75,7 +77,7 @@ export function useDockGeometry(
   useEffect(() => {
     if (nav.w === 0 || !platform) return;
     platform.setDockGeometry(JSON.parse(key)).catch((e) => useDock.getState().report(e));
-  }, [key, nav.w, platform]);
+  }, [key, nav.w, platform, monitors]);
 
   return { hidden: dock.autoHide && !revealed && !overlay, enter, leave, nav };
 }

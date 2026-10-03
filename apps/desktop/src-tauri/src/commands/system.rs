@@ -157,3 +157,9 @@ pub fn get_media_cover() -> DockResult<Option<String>> {
 pub fn get_wallpaper() -> DockResult<Option<String>> {
     crate::native::wallpaper::current()
 }
+
+/// Hide or restore the native taskbar. A guard process restores it even if the dock crashes.
+#[tauri::command]
+pub fn set_taskbar_hidden(on: bool) -> DockResult<()> {
+    crate::native::taskbar::set_hidden(on)
+}

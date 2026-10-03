@@ -15,6 +15,21 @@ mod visibility;
 use tauri::Manager;
 
 fn main() {
+    // Guard mode: no UI at all, just wait for the dock to end and restore the taskbar.
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("--taskbar-guard") {
+        let pid = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let prev = args.get(3).and_then(|s| s.parse().ok()).unwrap_or(0);
+        native::taskbar::run_guard(pid, prev);
+        return;
+    }
+    native::taskbar::recover_after_crash();
+    // A panic must never leave the taskbar hidden.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        native::taskbar::restore();
+        default_hook(info);
+    }));
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             // A second launch just brings the existing dock back.
@@ -41,6 +56,7 @@ fn main() {
             commands::system::media_control,
             commands::system::register_hotkey,
             commands::system::fetch_text,
+            commands::system::set_taskbar_hidden,
             commands::system::get_wallpaper,
             commands::system::get_disks,
             commands::system::get_uptime,
@@ -103,6 +119,7 @@ fn main() {
         .run(|app, event| {
             // Always restore system state on exit (AGENTS.md pitfall 9).
             if let tauri::RunEvent::Exit = event {
+                native::taskbar::restore();
                 if let Some(w) = app.get_webview_window("main") {
                     if let Ok(h) = w.hwnd() {
                         native::appbar::release(windows::Win32::Foundation::HWND(h.0 as *mut std::ffi::c_void));

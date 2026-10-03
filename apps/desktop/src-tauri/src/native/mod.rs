@@ -7,6 +7,7 @@ pub mod media;
 pub mod monitors;
 pub mod shortcut;
 pub mod system;
+pub mod taskbar;
 pub mod thumbs;
 pub mod winctl;
 pub mod vdesk;

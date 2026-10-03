@@ -25,6 +25,7 @@ export const ACTION_IDS = {
   switcher: "window-switcher",
   focusDock: "focus-dock",
   launcher: "launcher",
+  showTaskbar: "show-taskbar",
 } as const;
 
 export const snapActionId = (l: SnapLayout) => `snap:${l}`;

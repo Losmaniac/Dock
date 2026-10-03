@@ -5,5 +5,6 @@ pub mod index;
 pub mod iconkey;
 pub mod layout;
 pub mod net;
+pub mod taskbar_state;
 pub mod validate;
 pub mod vdesk;

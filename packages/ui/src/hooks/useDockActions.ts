@@ -149,6 +149,8 @@ export function useDockActions() {
               : `Workspace "${ws.name}" applied.`,
           ),
         );
+      } else if (a.id === ACTION_IDS.showTaskbar) {
+        st.edit((d) => void (d.dock.hideTaskbar = false));
       } else if (a.id === ACTION_IDS.launcher) {
         st.setOpen(st.open?.kind === "launcher" ? null : { kind: "launcher" });
       } else if (a.id === ACTION_IDS.focusDock) {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { itemKey, type Entry } from "../lib/entries";
-import { useDock } from "../store/dockStore";
+import { messageOf, useDock } from "../store/dockStore";
 
 /** Request icons for every visible app entry (cached by the store and by Rust on disk). */
 export function useEntryIcons(pinned: Entry[], running: Entry[]) {
@@ -23,6 +23,16 @@ export function useShellSync(needsKeyboard: boolean, closeOverlay: () => void) {
   useEffect(() => {
     void platform.setBlurMode(blur).catch(() => {});
   }, [platform, blur]);
+
+  const hideTaskbar = useDock((s) => s.config.dock.hideTaskbar);
+  const ready = useDock((s) => s.ready);
+  useEffect(() => {
+    if (!ready) return;
+    platform.setTaskbarHidden(hideTaskbar).catch((e) => {
+      useDock.getState().report(messageOf(e));
+      useDock.getState().edit((d) => void (d.dock.hideTaskbar = false));
+    });
+  }, [platform, ready, hideTaskbar]);
 
   useEffect(() => {
     void platform.setFocusable(needsKeyboard).catch(() => {});

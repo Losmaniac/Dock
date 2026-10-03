@@ -67,6 +67,13 @@ export function buildPaletteItems(
       run: { type: "action", actionId: ACTION_IDS.switcher },
     },
     {
+      id: "act:taskbar",
+      title: "Show Windows taskbar",
+      subtitle: "Turns off taskbar hiding",
+      group: "Action",
+      run: { type: "action", actionId: ACTION_IDS.showTaskbar },
+    },
+    {
       id: "act:settings",
       title: "Open settings",
       subtitle: "Dock",

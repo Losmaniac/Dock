@@ -28,6 +28,18 @@ export function MonitorRows() {
           onChange={(v) => edit((d) => void (d.dock.reserveSpace = v))}
         />
       </Row>
+      <Row label="Hide Windows taskbar">
+        <Toggle
+          value={dock.hideTaskbar}
+          onChange={(v) => edit((d) => void (d.dock.hideTaskbar = v))}
+        />
+      </Row>
+      {dock.hideTaskbar && (
+        <p className="pb-1 text-xs opacity-60">
+          The taskbar comes back when the dock exits, if it crashes (a small guard process restores
+          it), or when you switch this off. Palette action: "Show Windows taskbar".
+        </p>
+      )}
       {dock.reserveSpace && dock.autoHide && (
         <p className="pb-1 text-xs opacity-60">Space is not reserved while auto-hide is on.</p>
       )}
