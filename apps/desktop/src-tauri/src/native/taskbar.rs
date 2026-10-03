@@ -108,9 +108,19 @@ fn hide_all() {
     }
 }
 
+/// Undo our hiding, but only if we actually hid the taskbar. Called at startup, on exit and from
+/// the panic hook, so it must never touch a taskbar the user configured themselves (for example
+/// Windows' own auto-hide).
+pub fn restore_if_hidden() {
+    let had_state = state_path().map(|p| p.exists()).unwrap_or(false);
+    if WANTED.load(Ordering::SeqCst) || had_state {
+        restore();
+    }
+}
+
 pub fn set_hidden(on: bool) -> DockResult<()> {
     if !on {
-        restore();
+        restore_if_hidden();
         return Ok(());
     }
     if WANTED.load(Ordering::SeqCst) {

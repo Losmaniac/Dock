@@ -337,6 +337,8 @@ export class MockAdapter implements PlatformAPI {
   showThumbnail = (_hwnd: string, _rect: PixelRect) => Promise.resolve();
   hideThumbnails = () => Promise.resolve();
 
+  getDataDir = () => Promise.resolve("(browser storage)");
+
   /** Web demo: there is no taskbar to hide. */
   setTaskbarHidden = (_hidden: boolean) => Promise.resolve();
 

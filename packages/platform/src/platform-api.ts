@@ -95,6 +95,8 @@ export interface PlatformAPI {
   // System
   /** Hide or show the native taskbar. Always restored on exit and after a crash. */
   setTaskbarHidden(hidden: boolean): Promise<void>;
+  /** Folder with the config, icon cache and exports. */
+  getDataDir(): Promise<string>;
   /** The only network call: https, public hosts only. Used by opt-in widgets. */
   fetchText(url: string): Promise<string>;
   getAutostart(): Promise<boolean>;

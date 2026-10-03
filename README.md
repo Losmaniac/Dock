@@ -21,7 +21,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml -p dock-core   # pu
   opacity, window switcher, saved workspaces and action chains.
 - **Launcher and palette:** apps by Start Menu category, Store apps, recent files, document
   search, Windows settings pages; a keyboard command palette with fuzzy search.
-- **Widgets (36):** clock (digital or analog), calendar, stopwatch, focus timer, countdown, world
+- **Widgets (27):** clock (digital or analog), calendar, stopwatch, focus timer, countdown, world
   clock, calculator, to-do, sticky note, system load, battery, uptime, storage, network and Wi-Fi,
   temperature (when the PC exposes it), volume and mic, now playing, record player, virtual
   desktops, keyboard language, next calendar event, weather, stocks, crypto, currency (ECB),

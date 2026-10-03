@@ -27,7 +27,7 @@ fn main() {
     // A panic must never leave the taskbar hidden.
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        native::taskbar::restore();
+        native::taskbar::restore_if_hidden();
         default_hook(info);
     }));
     tauri::Builder::default()
@@ -57,6 +57,7 @@ fn main() {
             commands::system::media_control,
             commands::system::register_hotkey,
             commands::system::fetch_text,
+            commands::system::get_data_dir,
             commands::system::get_keyboard_language,
             commands::system::set_taskbar_hidden,
             commands::system::get_wallpaper,
@@ -102,7 +103,7 @@ fn main() {
             // Always restore system state on exit (AGENTS.md pitfall 9).
             if let tauri::RunEvent::Exit = event {
                 let _ = app; // windows are already gone; the process-wide registries do the cleanup
-                native::taskbar::restore();
+                native::taskbar::restore_if_hidden();
                 native::appbar::release_all();
             }
         });

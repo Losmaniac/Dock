@@ -169,3 +169,9 @@ pub fn set_taskbar_hidden(on: bool) -> DockResult<()> {
 pub fn get_keyboard_language() -> String {
     crate::native::input::keyboard_language()
 }
+
+/// Folder holding the config, icon cache and exports (for "Open data folder" in Settings).
+#[tauri::command]
+pub fn get_data_dir() -> DockResult<String> {
+    Ok(crate::config::app_dir()?.to_string_lossy().to_string())
+}

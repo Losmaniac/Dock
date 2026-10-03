@@ -22,3 +22,14 @@ labelled with how they were obtained. Re-measure on Windows before trusting any 
   1 500 ms, battery 30 s, calendar 15 min, weather 30 min.
 - Magnification caches each item's center on pointer enter instead of reading layout on every
   pointer move.
+
+## Added with the widget set
+
+- Every widget polls only while it is visible (the dock is not hidden): stats 1 000 ms, audio
+  2 000 ms, network and temperature 5 s, desktops 1,5 s, keyboard language 1 000 ms, disks and uptime
+  30 s, battery 30 s, quotes 5 min, crypto 2 min, ECB rates 6 h, calendar 15 min, weather 30 min.
+- The launcher's file index is built on a background thread (at most 60 000 names, depth 5) the first
+  time document search is used, and refreshed at most every 5 minutes. **Memory cost not measured.**
+- Start Menu and Store apps are listed on demand and cached for 5 minutes; Store apps need one
+  PowerShell call (about a second on the first open).
+- Window thumbnails, the record player, and `Get-StartApps` have **not been profiled on Windows**.

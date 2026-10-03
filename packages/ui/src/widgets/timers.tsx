@@ -97,7 +97,9 @@ export function PomodoroFace({ item, active }: FaceProps) {
 }
 
 export function PomodoroPanel({ item }: PanelProps) {
-  const [s, setS, now] = usePomodoroTicker(item, true);
+  // Read-only clock: the dock tile owns phase changes, so a phase end is announced exactly once.
+  const [s, setS] = useJsonOption(item, "state", parsePomo);
+  const now = useNow(s.running, 500);
   return (
     <div className="space-y-3">
       <div className="text-sm opacity-70">

@@ -4,7 +4,8 @@ import { useCurrentDock, useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
 import { DataRows, ThemeGallery } from "./SettingsData";
 import { DockRows } from "./SettingsDocks";
-import { HotkeyRows, IntegrationRows, MonitorRows, WidgetRows } from "./SettingsExtras";
+import { IntegrationRows, MonitorRows, WidgetRows } from "./SettingsExtras";
+import { HotkeyRows } from "./SettingsHotkeys";
 import { WorkspaceRows } from "./SettingsWorkspaces";
 
 type Tab = "docks" | "look" | "widgets" | "keys" | "data";

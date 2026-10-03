@@ -144,7 +144,10 @@ pub fn recent_files() -> DockResult<Vec<RecentFile>> {
 static INDEX: Mutex<(Option<Instant>, Vec<IndexEntry>, bool)> = Mutex::new((None, Vec::new(), false));
 
 fn rebuild_index() {
-    let Some(home) = std::env::var_os("USERPROFILE").map(PathBuf::from) else { return };
+    let Some(home) = std::env::var_os("USERPROFILE").map(PathBuf::from) else {
+        INDEX.lock().unwrap_or_else(|p| p.into_inner()).2 = false; // allow a later retry
+        return;
+    };
     let mut entries = Vec::new();
     for sub in ["Documents", "Desktop", "Downloads", "Pictures", "Music", "Videos"] {
         index::walk(&home.join(sub), 5, 60_000, &mut entries);

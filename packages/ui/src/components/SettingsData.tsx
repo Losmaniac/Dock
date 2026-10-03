@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { defaultConfig } from "@glass-dock/shared";
 import { exportJson, importJson } from "../lib/configFile";
+import { diagnosticsText } from "../lib/diagnostics";
 import { FINISH_LABEL, THEMES, applyTheme } from "../lib/themes";
 import { messageOf, useDock } from "../store/dockStore";
 import { Row, Section, Toggle } from "./controls";
@@ -72,6 +73,31 @@ export function DataRows() {
       .then((where) => report(`Exported to ${where}`))
       .catch((e) => report(messageOf(e)));
 
+  const openData = () =>
+    platform
+      .getDataDir()
+      .then((path) =>
+        path.startsWith("(")
+          ? report("The browser demo keeps its data in browser storage.")
+          : platform.launch({ type: "folder", path }),
+      )
+      .catch((e) => report(messageOf(e)));
+
+  const copyDiagnostics = async () => {
+    const st = useDock.getState();
+    const dataDir = await platform.getDataDir().catch(() => "unknown");
+    const text = diagnosticsText(st.config, st.monitors, {
+      userAgent: navigator.userAgent,
+      dataDir,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      report("Diagnostics copied. They contain no file names, keys or links.");
+    } catch {
+      report("Could not access the clipboard.");
+    }
+  };
+
   const doImport = async (f: File | undefined) => {
     if (!f) return;
     const res = importJson(await f.text());
@@ -110,6 +136,12 @@ export function DataRows() {
           }
         >
           Reset settings
+        </button>
+        <button className={btn} onClick={openData}>
+          Open data folder
+        </button>
+        <button className={btn} onClick={copyDiagnostics}>
+          Copy diagnostics
         </button>
         <input
           ref={file}

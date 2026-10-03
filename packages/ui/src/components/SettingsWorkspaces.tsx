@@ -4,7 +4,7 @@ import { wsActionId } from "../lib/actions";
 import { captureWorkspace } from "../lib/workspace";
 import { messageOf, useDock } from "../store/dockStore";
 import { Section } from "./controls";
-import { AccelInput } from "./SettingsExtras";
+import { AccelInput } from "./SettingsHotkeys";
 
 const btn = "rounded-lg bg-white/15 px-2.5 py-1 text-xs hover:bg-white/25";
 

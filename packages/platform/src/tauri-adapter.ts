@@ -148,6 +148,7 @@ export class TauriAdapter implements PlatformAPI {
 
   // System
   setTaskbarHidden = (hidden: boolean) => invoke<void>("set_taskbar_hidden", { on: hidden });
+  getDataDir = () => invoke<string>("get_data_dir");
   fetchText = (url: string) => invoke<string>("fetch_text", { url });
   getAutostart = () => invoke<boolean>("get_autostart");
   setAutostart = (on: boolean) => invoke<void>("set_autostart", { on });
