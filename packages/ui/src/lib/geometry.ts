@@ -10,6 +10,9 @@ export interface GeometryInput {
   nav: { w: number; h: number };
   iconSize: number;
   magnification: number;
+  monitor: string;
+  /** Reserve screen space as an AppBar (ignored with auto-hide, which cannot reserve). */
+  reserveSpace: boolean;
 }
 
 export const TOOLTIP_ROOM = 36;
@@ -27,7 +30,8 @@ export function computeGeometry(i: GeometryInput): DockGeometry {
   const along = horizontal ? i.nav.w : i.nav.h;
   const across = horizontal ? i.nav.h : i.nav.w;
   const margin = i.autoHide ? 0 : EDGE_GAP;
-  const base = { position: i.position, margin };
+  const reserve = i.reserveSpace && !i.autoHide ? across + margin : 0;
+  const base = { position: i.position, margin, monitor: i.monitor, reserve };
 
   if (i.autoHide && !i.revealed && !i.overlay) {
     return { ...base, mode: "hidden", length: along, thickness: across };

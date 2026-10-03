@@ -1,6 +1,6 @@
 //! Window-change events via SetWinEventHook (AGENTS.md 4.2: no polling in the frontend).
 //! A hook thread feeds a debouncer; the debouncer enumerates and emits only on real change.
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -14,7 +14,11 @@ use windows::Win32::UI::WindowsAndMessaging::{
     EVENT_SYSTEM_MINIMIZESTART, MSG, OBJID_WINDOW, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS,
 };
 
-use crate::native::windows_list;
+use windows::Win32::UI::Shell::{
+    SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
+};
+
+use crate::native::{monitors, windows_list};
 
 static TX: OnceLock<Sender<()>> = OnceLock::new();
 
@@ -64,6 +68,7 @@ pub fn start(app: AppHandle) {
 
     std::thread::spawn(move || {
         let mut last = Vec::new();
+        let mut last_monitors = monitors::list();
         let mut push = |app: &AppHandle| {
             let now = windows_list::list_windows();
             if now != last {
@@ -72,11 +77,35 @@ pub fn start(app: AppHandle) {
             }
         };
         push(&app);
-        while rx.recv().is_ok() {
-            // Coalesce bursts (a window opening fires many events) into one enumeration.
-            std::thread::sleep(Duration::from_millis(40));
-            while rx.try_recv().is_ok() {}
-            push(&app);
+        loop {
+            // Window events wake us immediately; otherwise a 1 s heartbeat checks the two
+            // things Windows gives no event for (fullscreen apps, display layout changes).
+            match rx.recv_timeout(Duration::from_secs(1)) {
+                Ok(()) => {
+                    std::thread::sleep(Duration::from_millis(40));
+                    while rx.try_recv().is_ok() {} // coalesce bursts into one enumeration
+                    push(&app);
+                }
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+            if crate::visibility::set_fullscreen(&app, fullscreen_app_running()) {
+                let _ = app.emit("fullscreen-changed", ());
+            }
+            let now = monitors::list();
+            if now != last_monitors {
+                let _ = app.emit("monitors-changed", &now);
+                last_monitors = now;
+            }
         }
     });
+}
+
+/// Pitfall: games and video players in fullscreen should not have a dock drawn over them.
+fn fullscreen_app_running() -> bool {
+    // SAFETY: plain query with no arguments.
+    match unsafe { SHQueryUserNotificationState() } {
+        Ok(s) => s == QUNS_BUSY || s == QUNS_RUNNING_D3D_FULL_SCREEN || s == QUNS_PRESENTATION_MODE,
+        Err(_) => false,
+    }
 }

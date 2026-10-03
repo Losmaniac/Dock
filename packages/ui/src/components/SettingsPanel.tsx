@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
+import { HotkeyRows, MonitorRows, WidgetRows } from "./SettingsExtras";
 
 export const SETTINGS_SIZE = { w: 440, h: 480 };
 
@@ -63,6 +64,7 @@ export function SettingsPanel({ close }: { close: () => void }) {
               onChange={(v) => edit((d) => void (d.dock.magnification = v))}
             />
           </Row>
+          <MonitorRows />
           <Row label="Auto-hide">
             <Toggle
               value={dock.autoHide}
@@ -153,6 +155,8 @@ export function SettingsPanel({ close }: { close: () => void }) {
             />
           </Row>
         </Section>
+        <WidgetRows />
+        <HotkeyRows />
       </div>
     </div>
   );

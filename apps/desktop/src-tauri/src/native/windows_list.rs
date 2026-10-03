@@ -28,6 +28,7 @@ pub struct WindowInfo {
     pub focused: bool,
     pub minimized: bool,
     pub elevated: bool,
+    pub topmost: bool,
 }
 
 pub fn to_hwnd(s: &str) -> DockResult<HWND> {
@@ -196,13 +197,14 @@ pub fn list_windows() -> Vec<WindowInfo> {
                 // SAFETY: simple query.
                 minimized: unsafe { IsIconic(hwnd).as_bool() },
                 elevated: info.elevated,
+                topmost: super::winctl::is_topmost(hwnd),
             })
         })
         .collect()
 }
 
 /// Pitfall 6: refuse clearly instead of failing silently on elevated windows.
-fn ensure_controllable(hwnd: HWND) -> DockResult<()> {
+pub fn ensure_controllable(hwnd: HWND) -> DockResult<()> {
     let mut pid = 0u32;
     // SAFETY: pid is a valid out pointer.
     unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };

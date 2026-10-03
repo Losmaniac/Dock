@@ -126,6 +126,37 @@ pub fn map_between_areas(r: Rect, from: Rect, to: Rect) -> Rect {
     )
 }
 
+/// Invisible resize borders Windows 10/11 draws around a window (difference between
+/// `GetWindowRect` and the DWM extended frame bounds).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Insets {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+/// Grow a target (visible) rectangle by the invisible borders so the *visible* frame lands
+/// exactly on the snap target and neighbouring windows touch without gaps.
+pub fn apply_insets(visible: Rect, i: Insets) -> Rect {
+    Rect::new(
+        visible.x - i.left,
+        visible.y - i.top,
+        visible.w + i.left + i.right,
+        visible.h + i.top + i.bottom,
+    )
+}
+
+/// Screen space a reserved AppBar claims on one edge of a monitor.
+pub fn appbar_rect(monitor: Rect, pos: Position, thickness: i32) -> Rect {
+    match pos {
+        Position::Bottom => Rect::new(monitor.x, monitor.y + monitor.h - thickness, monitor.w, thickness),
+        Position::Top => Rect::new(monitor.x, monitor.y, monitor.w, thickness),
+        Position::Left => Rect::new(monitor.x, monitor.y, thickness, monitor.h),
+        Position::Right => Rect::new(monitor.x + monitor.w - thickness, monitor.y, thickness, monitor.h),
+    }
+}
+
 /// 0..1 opacity to the 0..255 alpha byte `SetLayeredWindowAttributes` expects.
 /// Clamped to a minimum so a window can never be made invisible by accident.
 pub fn opacity_to_alpha(v: f64) -> u8 {
@@ -207,6 +238,20 @@ mod tests {
         let half = snap_rect(from, SnapLayout::RightHalf);
         let moved = map_between_areas(half, from, to);
         assert_eq!(moved, snap_rect(to, SnapLayout::RightHalf));
+    }
+
+    #[test]
+    fn insets_make_the_visible_frame_hit_the_target() {
+        let i = Insets { left: 7, top: 0, right: 7, bottom: 7 };
+        let r = apply_insets(Rect::new(0, 0, 960, 1040), i);
+        assert_eq!(r, Rect::new(-7, 0, 974, 1047));
+    }
+
+    #[test]
+    fn appbar_claims_an_edge_strip() {
+        let m = Rect::new(0, 0, 1920, 1080);
+        assert_eq!(appbar_rect(m, Position::Bottom, 90), Rect::new(0, 990, 1920, 90));
+        assert_eq!(appbar_rect(m, Position::Right, 90), Rect::new(1830, 0, 90, 1080));
     }
 
     #[test]

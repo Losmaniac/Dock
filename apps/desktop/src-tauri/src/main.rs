@@ -8,12 +8,15 @@ mod commands;
 mod config;
 mod error;
 mod events;
+mod hotkeys;
 mod native;
+mod visibility;
 
 use tauri::Manager;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             commands::shell::set_blur_mode,
             commands::shell::set_dock_geometry,
@@ -22,6 +25,16 @@ fn main() {
             commands::windows::focus_window,
             commands::windows::minimize_window,
             commands::windows::close_window,
+            commands::windows::snap_window,
+            commands::windows::move_window_to_monitor,
+            commands::windows::set_always_on_top,
+            commands::windows::set_window_opacity,
+            commands::windows::get_monitors,
+            commands::system::get_system_stats,
+            commands::system::get_battery,
+            commands::system::get_now_playing,
+            commands::system::media_control,
+            commands::system::register_hotkey,
             commands::launcher::launch,
             commands::launcher::get_icon,
             commands::launcher::describe_path,
@@ -58,6 +71,16 @@ fn main() {
             window.show()?;
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Glass Dock");
+        .build(tauri::generate_context!())
+        .expect("error while building Glass Dock")
+        .run(|app, event| {
+            // Always restore system state on exit (AGENTS.md pitfall 9).
+            if let tauri::RunEvent::Exit = event {
+                if let Some(w) = app.get_webview_window("main") {
+                    if let Ok(h) = w.hwnd() {
+                        native::appbar::release(windows::Win32::Foundation::HWND(h.0 as *mut std::ffi::c_void));
+                    }
+                }
+            }
+        });
 }

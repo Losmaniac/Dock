@@ -21,6 +21,7 @@ export interface WindowInfo {
   minimized: boolean;
   /** Elevated windows cannot be controlled by a non-elevated dock. */
   elevated: boolean;
+  topmost: boolean;
 }
 
 export type SnapLayout =
@@ -32,7 +33,10 @@ export type SnapLayout =
   | "top-left"
   | "top-right"
   | "bottom-left"
-  | "bottom-right";
+  | "bottom-right"
+  | "left-third"
+  | "center-third"
+  | "right-third";
 
 export type LaunchItem =
   | { type: "app"; path: string; args?: string[] }
@@ -75,6 +79,17 @@ export interface FolderEntry {
   isDir: boolean;
 }
 
+export interface MonitorInfo {
+  /** Stable device name such as `\\.\DISPLAY1`. */
+  id: string;
+  primary: boolean;
+  width: number;
+  height: number;
+  scale: number;
+}
+
+export type MediaAction = "play-pause" | "next" | "previous";
+
 export type DockMode = "hidden" | "rest" | "active";
 
 /** Sizes in CSS pixels, measured by the frontend. */
@@ -85,6 +100,10 @@ export interface DockGeometry {
   thickness: number;
   /** Gap to the screen edge; 0 when auto-hide is on. */
   margin: number;
+  /** "primary" or a monitor id; unknown ids fall back to primary. */
+  monitor: string;
+  /** Logical px to reserve as an AppBar (0 = do not reserve). */
+  reserve: number;
 }
 
 export type DockPosition = "bottom" | "top" | "left" | "right";

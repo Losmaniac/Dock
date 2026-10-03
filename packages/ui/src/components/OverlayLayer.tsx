@@ -1,20 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { CSSProperties } from "react";
 import type { DockPosition } from "@glass-dock/shared";
-import type { Entry } from "../lib/entries";
+import type { Open } from "../lib/overlay";
 import { OVERLAY_GAP } from "../lib/geometry";
 import type { Overlay } from "../hooks/useDockGeometry";
-import { ContextMenu, MENU_ROW, type MenuAction } from "./ContextMenu";
+import { CommandPalette, PALETTE_SIZE } from "./CommandPalette";
+import { ContextMenu, MENU_ROW, menuRows } from "./ContextMenu";
 import { FolderStack, STACK_SIZE } from "./FolderStack";
 import { PropertiesPanel, PROPS_SIZE } from "./PropertiesPanel";
 import { SETTINGS_SIZE, SettingsPanel } from "./SettingsPanel";
-
-type AppEntry = Extract<Entry, { kind: "app" | "running" }>;
-export type Open =
-  | { kind: "menu"; title: string; actions: MenuAction[] }
-  | { kind: "settings" }
-  | { kind: "stack"; item: Extract<Extract<Entry, { kind: "other" }>["item"], { type: "folder" }> }
-  | { kind: "props"; entry: AppEntry };
+import { WIDGET_SIZE, WidgetPanel } from "./WidgetPanel";
 
 export const sizeOf = (o: Open): Overlay =>
   o.kind === "settings"
@@ -23,7 +18,11 @@ export const sizeOf = (o: Open): Overlay =>
       ? STACK_SIZE
       : o.kind === "props"
         ? PROPS_SIZE
-        : { w: 240, h: 48 + o.actions.length * (MENU_ROW + 2) + 12 };
+        : o.kind === "palette"
+          ? PALETTE_SIZE
+          : o.kind === "widget"
+            ? WIDGET_SIZE
+            : { w: 240, h: 48 + (menuRows(o.actions) + 1) * (MENU_ROW + 2) + 12 };
 
 function panelStyle(p: DockPosition, across: number): CSSProperties {
   const off = across + OVERLAY_GAP;
@@ -41,6 +40,8 @@ function panelStyle(p: DockPosition, across: number): CSSProperties {
 
 export function OverlayLayer(props: {
   open: Open | null;
+  runEntry: (entryId: string) => void;
+  runAction: (actionId: string, target: string | null) => void;
   position: DockPosition;
   across: number;
   close: () => void;
@@ -65,6 +66,15 @@ export function OverlayLayer(props: {
             )}
             {open.kind === "settings" && <SettingsPanel close={close} />}
             {open.kind === "stack" && <FolderStack item={open.item} close={close} />}
+            {open.kind === "widget" && <WidgetPanel widget={open.widget} close={close} />}
+            {open.kind === "palette" && (
+              <CommandPalette
+                target={open.target}
+                close={close}
+                runEntry={props.runEntry}
+                runAction={props.runAction}
+              />
+            )}
             {open.kind === "props" && <PropertiesPanel entry={open.entry} close={close} />}
           </motion.div>
         </div>

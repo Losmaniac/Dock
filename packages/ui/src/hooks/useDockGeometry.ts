@@ -67,6 +67,8 @@ export function useDockGeometry(
     nav,
     iconSize: dock.iconSize,
     magnification: dock.magnification,
+    monitor: dock.monitor,
+    reserveSpace: dock.reserveSpace,
   });
   const key = JSON.stringify(geometry);
   useEffect(() => {

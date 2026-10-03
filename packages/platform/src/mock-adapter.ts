@@ -11,6 +11,8 @@ import type {
   FolderEntry,
   PathInfo,
   IconSource,
+  MediaAction,
+  MonitorInfo,
   LaunchItem,
   MediaInfo,
   SnapLayout,
@@ -19,6 +21,7 @@ import type {
   WindowInfo,
 } from "@glass-dock/shared";
 import { defaultConfig, parseConfig } from "@glass-dock/shared";
+import { matchesAccelerator } from "./accelerator";
 import type { PlatformAPI } from "./platform-api";
 
 const MOCK_APPS = [
@@ -51,6 +54,7 @@ export class MockAdapter implements PlatformAPI {
     focused: i === 0,
     minimized: false,
     elevated: false,
+    topmost: false,
   }));
   private windowListeners = new Set<(w: WindowInfo[]) => void>();
   private config: DockConfig = this.readStoredConfig();
@@ -68,13 +72,19 @@ export class MockAdapter implements PlatformAPI {
   private seedConfig(): DockConfig {
     return {
       ...defaultConfig(),
-      items: MOCK_APPS.map((a) => ({
-        id: a.id,
-        type: "app" as const,
-        label: a.label,
-        path: a.path,
-        args: [],
-      })),
+      items: [
+        ...MOCK_APPS.map((a) => ({
+          id: a.id,
+          type: "app" as const,
+          label: a.label,
+          path: a.path,
+          args: [],
+        })),
+        { id: "mock-sep", type: "separator" as const },
+        { id: "mock-clock", type: "widget" as const, widget: "clock" as const },
+        { id: "mock-stats", type: "widget" as const, widget: "system-stats" as const },
+        { id: "mock-media", type: "widget" as const, widget: "now-playing" as const },
+      ],
     };
   }
 
@@ -109,7 +119,7 @@ export class MockAdapter implements PlatformAPI {
   };
   snapWindow = (_hwnd: string, _layout: SnapLayout) => Promise.resolve();
   moveWindowToMonitor = (_hwnd: string, _monitorId: string) => Promise.resolve();
-  setAlwaysOnTop = (_hwnd: string, _on: boolean) => Promise.resolve();
+  setAlwaysOnTop = (hwnd: string, on: boolean) => this.mutate(hwnd, (w) => void (w.topmost = on));
   setWindowOpacity = (_hwnd: string, _value: number) => Promise.resolve();
 
   onWindowsChanged(cb: (w: WindowInfo[]) => void): Unsubscribe {
@@ -130,6 +140,7 @@ export class MockAdapter implements PlatformAPI {
           focused: true,
           minimized: false,
           elevated: false,
+          topmost: false,
         });
         this.emitWindows();
       }
@@ -145,7 +156,41 @@ export class MockAdapter implements PlatformAPI {
     );
   }
 
-  registerHotkey = (_accelerator: string, _actionId: string) => Promise.resolve();
+  private hotkeys = new Map<string, string>(); // actionId -> accelerator
+  private hotkeyListeners = new Set<(id: string) => void>();
+  private keydown = (e: KeyboardEvent) => {
+    for (const [id, accel] of this.hotkeys) {
+      if (matchesAccelerator(e, accel)) {
+        e.preventDefault();
+        this.hotkeyListeners.forEach((cb) => cb(id));
+        return;
+      }
+    }
+  };
+  /** Web demo: in-page key handling stands in for OS-wide hotkeys. */
+  registerHotkey(accelerator: string, actionId: string): Promise<void> {
+    if (!accelerator.trim()) this.hotkeys.delete(actionId);
+    else {
+      for (const [id, a] of this.hotkeys) {
+        if (id !== actionId && a.toLowerCase() === accelerator.toLowerCase())
+          return Promise.reject({
+            code: "invalid_argument",
+            message: `"${accelerator}" is already used by another action.`,
+          });
+      }
+      this.hotkeys.set(actionId, accelerator);
+    }
+    return Promise.resolve();
+  }
+  onHotkey(cb: (actionId: string) => void): Unsubscribe {
+    if (this.hotkeyListeners.size === 0) globalThis.addEventListener?.("keydown", this.keydown);
+    this.hotkeyListeners.add(cb);
+    return () => {
+      this.hotkeyListeners.delete(cb);
+      if (this.hotkeyListeners.size === 0)
+        globalThis.removeEventListener?.("keydown", this.keydown);
+    };
+  }
 
   describePath = (path: string): Promise<PathInfo> =>
     Promise.resolve({ kind: "file", label: path.split(/[\\/]/).pop() ?? path, path, args: [] });
@@ -179,6 +224,16 @@ export class MockAdapter implements PlatformAPI {
     void this.getNowPlaying().then(cb);
     return () => {};
   }
+
+  mediaControl = (_action: MediaAction) => Promise.resolve();
+  getMonitors = (): Promise<MonitorInfo[]> =>
+    Promise.resolve([
+      { id: "\\\\.\\DISPLAY1", primary: true, width: 1920, height: 1080, scale: 1 },
+      { id: "\\\\.\\DISPLAY2", primary: false, width: 2560, height: 1440, scale: 1.5 },
+    ]);
+  onMonitorsChanged =
+    (_cb: (m: MonitorInfo[]) => void): Unsubscribe =>
+    () => {};
 
   setDockPosition = (_pos: DockPosition) => Promise.resolve();
   setAutoHide = (_on: boolean) => Promise.resolve();

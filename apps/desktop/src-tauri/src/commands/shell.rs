@@ -1,6 +1,10 @@
 use dock_core::layout::{dock_rect, DockMode, Position};
 use serde::Deserialize;
 use tauri::WebviewWindow;
+use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_SHOWWINDOW};
+
+use crate::native::{appbar, monitors};
 
 use crate::error::DockResult;
 
@@ -65,26 +69,37 @@ pub struct Geometry {
     pub thickness: f64,
     /// Gap to the screen edge (logical px); 0 for auto-hide so the pointer can reach the bar.
     pub margin: f64,
+    /// `"primary"` or a monitor id from `get_monitors`; unknown ids fall back to primary.
+    pub monitor: String,
+    /// Logical px to reserve as an AppBar (0 = do not reserve).
+    pub reserve: f64,
+}
+
+fn hwnd_of(window: &WebviewWindow) -> DockResult<HWND> {
+    Ok(HWND(window.hwnd()?.0 as *mut std::ffi::c_void))
 }
 
 /// Single atomic SetWindowPos so the dock never visibly jumps between size and position.
 #[tauri::command]
 pub fn set_dock_geometry(window: WebviewWindow, geometry: Geometry) -> DockResult<()> {
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{
-        SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    let mon = if geometry.monitor == "primary" {
+        monitors::primary()
+    } else {
+        monitors::resolve(&geometry.monitor).unwrap_or_else(monitors::primary)
     };
-    let scale = window.scale_factor().unwrap_or(1.0);
-    let area = crate::native::monitors::primary_work_area();
-    let r = dock_rect(
-        area,
-        geometry.position,
-        (geometry.length * scale).round() as i32,
-        (geometry.thickness * scale).round() as i32,
-        (geometry.margin * scale).round() as i32,
-        geometry.mode,
-    );
-    let hwnd = HWND(window.hwnd()?.0 as *mut std::ffi::c_void);
+    let hwnd = hwnd_of(&window)?;
+    let px = |v: f64| (v * mon.scale).round() as i32;
+
+    // With a reserved AppBar the work area already excludes the bar, so place against the
+    // full monitor instead; otherwise keep clear of the taskbar via the work area.
+    let reserving = geometry.reserve > 0.0 && geometry.mode != DockMode::Hidden;
+    if reserving {
+        appbar::reserve(hwnd, mon.full, geometry.position, px(geometry.reserve));
+    } else {
+        appbar::release(hwnd);
+    }
+    let area = if reserving { mon.full } else { mon.work };
+    let r = dock_rect(area, geometry.position, px(geometry.length), px(geometry.thickness), px(geometry.margin), geometry.mode);
     // SAFETY: hwnd belongs to this process's live main window.
     unsafe {
         SetWindowPos(hwnd, Some(HWND_TOPMOST), r.x, r.y, r.w, r.h, SWP_NOACTIVATE | SWP_SHOWWINDOW)?;
@@ -96,11 +111,10 @@ pub fn set_dock_geometry(window: WebviewWindow, geometry: Geometry) -> DockResul
 /// field (command palette) needs the keyboard.
 #[tauri::command]
 pub fn set_dock_focusable(window: WebviewWindow, focusable: bool) -> DockResult<()> {
-    use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::WindowsAndMessaging::{
         GetWindowLongW, SetWindowLongW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
     };
-    let hwnd = HWND(window.hwnd()?.0 as *mut std::ffi::c_void);
+    let hwnd = hwnd_of(&window)?;
     // SAFETY: read-modify-write of this process's own window style.
     unsafe {
         let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;

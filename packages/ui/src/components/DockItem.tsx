@@ -89,7 +89,7 @@ export function DockItem(p: DockItemProps) {
         {p.icon ? (
           <img src={p.icon} alt="" draggable={false} className="h-full w-full rounded-item" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center rounded-item bg-white/10 text-lg">
+          <span className="flex h-full w-full items-center justify-center overflow-hidden whitespace-nowrap rounded-item bg-white/10 text-lg">
             {p.fallback ?? p.label.slice(0, 1).toUpperCase()}
           </span>
         )}

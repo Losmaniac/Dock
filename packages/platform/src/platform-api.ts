@@ -7,6 +7,8 @@ import type {
   FolderEntry,
   PathInfo,
   IconSource,
+  MediaAction,
+  MonitorInfo,
   LaunchItem,
   MediaInfo,
   SnapLayout,
@@ -31,7 +33,9 @@ export interface PlatformAPI {
   // Launcher
   launch(item: LaunchItem): Promise<void>;
   getIcon(source: IconSource): Promise<string>; // data URL (PNG)
+  /** Rejects with a readable message when the combination is taken. Empty accelerator unregisters. */
   registerHotkey(accelerator: string, actionId: string): Promise<void>;
+  onHotkey(cb: (actionId: string) => void): Unsubscribe;
   /** Classify a dropped path and resolve .lnk shortcuts. */
   describePath(path: string): Promise<PathInfo>;
   listFolder(path: string): Promise<FolderEntry[]>;
@@ -43,6 +47,9 @@ export interface PlatformAPI {
   getBattery(): Promise<BatteryInfo | null>;
   getNowPlaying(): Promise<MediaInfo | null>;
   onNowPlaying(cb: (m: MediaInfo | null) => void): Unsubscribe;
+  mediaControl(action: MediaAction): Promise<void>;
+  getMonitors(): Promise<MonitorInfo[]>;
+  onMonitorsChanged(cb: (m: MonitorInfo[]) => void): Unsubscribe;
 
   // Dock shell
   setDockPosition(pos: DockPosition): Promise<void>;

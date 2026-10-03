@@ -1,12 +1,22 @@
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
+
 export interface MenuAction {
   label: string;
-  onSelect: () => void;
+  onSelect?: () => void;
+  /** Opens a nested list instead of running `onSelect`. */
+  children?: MenuAction[];
+  checked?: boolean;
   danger?: boolean;
   disabled?: boolean;
   separatorBefore?: boolean;
 }
 
 export const MENU_ROW = 34;
+
+/** Rows needed to show the longest list (top level or any submenu). */
+export const menuRows = (actions: MenuAction[]): number =>
+  Math.max(actions.length, ...actions.map((a) => (a.children ? a.children.length + 1 : 0)));
 
 export function ContextMenu({
   title,
@@ -17,25 +27,44 @@ export function ContextMenu({
   actions: MenuAction[];
   close: () => void;
 }) {
+  const [parent, setParent] = useState<MenuAction | null>(null);
+  const list = parent?.children ?? actions;
+
   return (
     <div role="menu" aria-label={title} className="panel w-56 p-1.5 text-sm">
-      <div className="truncate px-2.5 py-1.5 text-xs opacity-60">{title}</div>
-      {actions.map((a) => (
+      <div className="truncate px-2.5 py-1.5 text-xs opacity-60">
+        {parent ? `‹ ${parent.label}` : title}
+      </div>
+      {parent && (
+        <button
+          role="menuitem"
+          style={{ height: MENU_ROW }}
+          onClick={() => setParent(null)}
+          className="flex w-full items-center rounded-lg px-2.5 text-left outline-none hover:bg-white/15 focus-visible:bg-white/15"
+        >
+          Back
+        </button>
+      )}
+      {list.map((a) => (
         <div key={a.label}>
           {a.separatorBefore && <div className="my-1 h-px bg-white/15" />}
           <button
             role="menuitem"
+            aria-checked={a.checked}
             disabled={a.disabled}
             style={{ height: MENU_ROW }}
             onClick={() => {
-              a.onSelect();
+              if (a.children) return setParent(a);
+              a.onSelect?.();
               close();
             }}
-            className={`flex w-full items-center rounded-lg px-2.5 text-left outline-none hover:bg-white/15 focus-visible:bg-white/15 disabled:opacity-40 ${
-              a.danger ? "text-red-400" : ""
-            }`}
+            className={`flex w-full items-center justify-between rounded-lg px-2.5 text-left outline-none hover:bg-white/15 focus-visible:bg-white/15 disabled:opacity-40 ${a.danger ? "text-red-400" : ""}`}
           >
-            {a.label}
+            <span>
+              {a.checked ? "✓ " : ""}
+              {a.label}
+            </span>
+            {a.children && <ChevronRight size={14} />}
           </button>
         </div>
       ))}

@@ -4,26 +4,23 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type {
   BlurMode,
   DockConfig,
-  DockError,
   DockGeometry,
   DockPosition,
   FolderEntry,
   IconSource,
+  MediaAction,
+  MediaInfo,
+  MonitorInfo,
+  SnapLayout,
+  SystemStats,
+  BatteryInfo,
   LaunchItem,
   PathInfo,
   Unsubscribe,
   WindowInfo,
 } from "@glass-dock/shared";
 import { loadConfigFromRaw } from "./config-io";
-import { MockAdapter } from "./mock-adapter";
 import type { PlatformAPI } from "./platform-api";
-
-function notImplemented(what: string, phase: number): never {
-  const err: DockError = { code: "not_implemented", message: `${what} arrives in Phase ${phase}` };
-  throw err;
-}
-
-const later = (what: string, phase: number) => () => Promise.reject(notImplemented(what, phase));
 
 /** Subscribe to a Tauri event; returns a synchronous unsubscribe even though listen() is async. */
 function subscribe<T>(event: string, cb: (payload: T) => void): Unsubscribe {
@@ -40,13 +37,9 @@ function subscribe<T>(event: string, cb: (payload: T) => void): Unsubscribe {
 }
 
 /**
- * Phase 1 wires windows, launcher, icons, config and window geometry to Rust. Methods that
- * belong to later phases reject with a typed `not_implemented` error naming their phase.
- * The only mock use left is the labeled data for the info widgets until Phase 2.
+ * Every method is backed by a Rust command or event; there is no mock data on this path.
  */
 export class TauriAdapter implements PlatformAPI {
-  private readonly info = new MockAdapter();
-
   // Windows
   listWindows = () => invoke<WindowInfo[]>("list_windows");
   focusWindow = (hwnd: string) => invoke<void>("focus_window", { hwnd });
@@ -54,17 +47,21 @@ export class TauriAdapter implements PlatformAPI {
   closeWindow = (hwnd: string) => invoke<void>("close_window", { hwnd });
   onWindowsChanged = (cb: (w: WindowInfo[]) => void) =>
     subscribe<WindowInfo[]>("windows-changed", cb);
-  snapWindow = later("snapWindow", 2);
-  moveWindowToMonitor = later("moveWindowToMonitor", 2);
-  setAlwaysOnTop = later("setAlwaysOnTop", 2);
-  setWindowOpacity = later("setWindowOpacity", 2);
+  snapWindow = (hwnd: string, layout: SnapLayout) => invoke<void>("snap_window", { hwnd, layout });
+  moveWindowToMonitor = (hwnd: string, monitorId: string) =>
+    invoke<void>("move_window_to_monitor", { hwnd, monitorId });
+  setAlwaysOnTop = (hwnd: string, on: boolean) => invoke<void>("set_always_on_top", { hwnd, on });
+  setWindowOpacity = (hwnd: string, value: number) =>
+    invoke<void>("set_window_opacity", { hwnd, value });
 
   // Launcher
   launch = (item: LaunchItem) => invoke<void>("launch", { item });
   getIcon = (source: IconSource) => invoke<string>("get_icon", { source });
   describePath = (path: string) => invoke<PathInfo>("describe_path", { path });
   listFolder = (path: string): Promise<FolderEntry[]> => invoke("list_folder", { path });
-  registerHotkey = later("registerHotkey", 2);
+  registerHotkey = (accelerator: string, actionId: string) =>
+    invoke<void>("register_hotkey", { accelerator, actionId });
+  onHotkey = (cb: (actionId: string) => void) => subscribe<string>("hotkey", cb);
   onFilesDropped(cb: (paths: string[], point: { x: number; y: number }) => void): Unsubscribe {
     let off: (() => void) | undefined;
     let cancelled = false;
@@ -81,11 +78,31 @@ export class TauriAdapter implements PlatformAPI {
     };
   }
 
-  // Info (Phase 2: real data). Labeled mock until then.
-  getSystemStats = () => this.info.getSystemStats();
-  getBattery = () => this.info.getBattery();
-  getNowPlaying = () => this.info.getNowPlaying();
-  onNowPlaying = (cb: Parameters<PlatformAPI["onNowPlaying"]>[0]) => this.info.onNowPlaying(cb);
+  // Info
+  getSystemStats = () => invoke<SystemStats>("get_system_stats");
+  getBattery = () => invoke<BatteryInfo | null>("get_battery");
+  getNowPlaying = () => invoke<MediaInfo | null>("get_now_playing");
+  mediaControl = (action: MediaAction) => invoke<void>("media_control", { action });
+  getMonitors = () => invoke<MonitorInfo[]>("get_monitors");
+  onMonitorsChanged = (cb: (m: MonitorInfo[]) => void) =>
+    subscribe<MonitorInfo[]>("monitors-changed", cb);
+  /** SMTC has no cheap push channel here, so poll only while someone is subscribed (a visible widget). */
+  onNowPlaying(cb: (m: MediaInfo | null) => void): Unsubscribe {
+    let last = "";
+    const tick = () =>
+      void this.getNowPlaying()
+        .then((m) => {
+          const key = JSON.stringify(m);
+          if (key !== last) {
+            last = key;
+            cb(m);
+          }
+        })
+        .catch(() => cb(null));
+    tick();
+    const t = setInterval(tick, 1500);
+    return () => clearInterval(t);
+  }
 
   // Dock shell
   setBlurMode = (mode: BlurMode) => invoke<void>("set_blur_mode", { mode });

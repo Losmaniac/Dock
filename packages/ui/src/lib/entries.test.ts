@@ -10,6 +10,7 @@ const win = (o: Partial<WindowInfo>): WindowInfo => ({
   focused: false,
   minimized: false,
   elevated: false,
+  topmost: false,
   ...o,
 });
 const app = (id: string, path: string): DockItem => ({

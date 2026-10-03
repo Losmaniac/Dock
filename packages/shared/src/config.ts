@@ -44,7 +44,8 @@ export const dockConfigSchema = z.object({
       reserveSpace: z.boolean().default(false),
       iconSize: z.number().min(32).max(96).default(56),
       magnification: z.number().min(1).max(1.8).default(1.6),
-      monitors: z.enum(["primary", "all"]).default("primary"),
+      /** "primary" or a monitor id. Showing the dock on every monitor is not implemented (ADR 003). */
+      monitor: z.string().default("primary"),
     })
     .default({}),
   appearance: z
@@ -65,6 +66,10 @@ export const dockConfigSchema = z.object({
     .object({
       toggleDock: z.string().default("Ctrl+Alt+D"),
       commandPalette: z.string().default("Ctrl+Space"),
+      /** Modifier for "jump to the Nth dock item": <modifier>+1 .. <modifier>+9. Empty = off. */
+      jumpModifier: z.string().default("Ctrl+Alt"),
+      /** Snap layout -> accelerator, for example `{ "left-half": "Ctrl+Alt+Left" }`. */
+      snap: z.record(z.string()).default({}),
     })
     .default({}),
   workspaces: z.array(z.unknown()).default([]),

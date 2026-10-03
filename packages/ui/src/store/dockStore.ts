@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type { DockConfig, DockItem, PathInfo, WindowInfo } from "@glass-dock/shared";
+import type { DockConfig, DockItem, MonitorInfo, PathInfo, WindowInfo } from "@glass-dock/shared";
 import { defaultConfig } from "@glass-dock/shared";
 import type { PlatformAPI } from "@glass-dock/platform";
+import type { Open, WidgetKind } from "../lib/overlay";
 
 export interface Toast {
   id: number;
@@ -13,6 +14,10 @@ interface DockState {
   ready: boolean;
   config: DockConfig;
   windows: WindowInfo[];
+  monitors: MonitorInfo[];
+  open: Open | null;
+  setOpen(o: Open | null): void;
+  toggleWidget(widget: WidgetKind, on: boolean): void;
   icons: Record<string, string>;
   toasts: Toast[];
   init(platform: PlatformAPI): () => void;
@@ -51,6 +56,9 @@ export const useDock = create<DockState>((set, get) => {
     ready: false,
     config: defaultConfig(),
     windows: [],
+    monitors: [],
+    open: null,
+    setOpen: (open) => set({ open }),
     icons: {},
     toasts: [],
 
@@ -59,10 +67,13 @@ export const useDock = create<DockState>((set, get) => {
       let alive = true;
       void platform.loadConfig().then((config) => alive && set({ config, ready: true }));
       void platform.listWindows().then((windows) => alive && set({ windows }));
+      void platform.getMonitors().then((monitors) => alive && set({ monitors }));
       const off = platform.onWindowsChanged((windows) => set({ windows }));
+      const offMon = platform.onMonitorsChanged((monitors) => set({ monitors }));
       return () => {
         alive = false;
         off();
+        offMon();
       };
     },
 
@@ -82,6 +93,14 @@ export const useDock = create<DockState>((set, get) => {
       get().edit((d) => {
         const byId = new Map(d.items.map((i) => [i.id, i]));
         d.items = ids.map((id) => byId.get(id)).filter((i): i is DockItem => !!i);
+      });
+    },
+
+    toggleWidget(widget, on) {
+      get().edit((d) => {
+        const has = d.items.some((i) => i.type === "widget" && i.widget === widget);
+        if (on && !has) d.items.push({ id: uid(), type: "widget", widget });
+        if (!on) d.items = d.items.filter((i) => !(i.type === "widget" && i.widget === widget));
       });
     },
 
