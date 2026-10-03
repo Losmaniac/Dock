@@ -1,4 +1,8 @@
 import type { WidgetKind } from "@glass-dock/shared";
+import { AiFace, AiPanel } from "./ai";
+import { CryptoFace, CryptoPanel } from "./crypto";
+import { CurrencyFace, CurrencyPanel } from "./currency";
+import { MarketFace, MarketPanel, StocksFace, StocksPanel } from "./markets";
 import { CalendarFace, CalendarPanel, WeatherFace, WeatherPanel } from "./online";
 import {
   MediaFace,
@@ -186,6 +190,45 @@ export const WIDGETS: Record<WidgetKind, WidgetDef> = {
     Face: CalendarFace,
     Panel: CalendarPanel,
     panel: { w: 300, h: 190 },
+  },
+  stocks: {
+    label: "Stocks",
+    group: "Online",
+    Face: StocksFace,
+    Panel: StocksPanel,
+    panel: { w: 320, h: 270 },
+    keyboard: true,
+  },
+  crypto: {
+    label: "Crypto",
+    group: "Online",
+    Face: CryptoFace,
+    Panel: CryptoPanel,
+    panel: { w: 340, h: 270 },
+    keyboard: true,
+  },
+  currency: {
+    label: "Currency",
+    group: "Online",
+    Face: CurrencyFace,
+    Panel: CurrencyPanel,
+    panel: { w: 320, h: 270 },
+    keyboard: true,
+  },
+  market: {
+    label: "Market overview",
+    group: "Online",
+    Face: MarketFace,
+    Panel: MarketPanel,
+    panel: { w: 320, h: 270 },
+    keyboard: true,
+  },
+  "ai-providers": {
+    label: "AI providers",
+    group: "Online",
+    Face: AiFace,
+    Panel: AiPanel,
+    panel: { w: 280, h: 280 },
   },
   weather: {
     label: "Weather",

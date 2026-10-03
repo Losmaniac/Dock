@@ -24,6 +24,11 @@ export const WIDGET_KINDS = [
   "virtual-desktops",
   "calendar",
   "weather",
+  "stocks",
+  "crypto",
+  "currency",
+  "market",
+  "ai-providers",
 ] as const;
 export type WidgetKind = (typeof WIDGET_KINDS)[number];
 

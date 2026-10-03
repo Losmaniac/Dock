@@ -338,6 +338,22 @@ export class MockAdapter implements PlatformAPI {
 
   /** Web demo: canned feeds, so no real request is made. */
   fetchText(url: string): Promise<string> {
+    if (url.includes("stooq.com"))
+      return Promise.resolve(
+        "Symbol,Date,Time,Open,High,Low,Close,Volume\nAAPL.US,2030-01-02,22:00:00,190,195,189,193.4,1\nMSFT.US,2030-01-02,22:00:00,410,412,402,404.1,1\nNVDA.US,2030-01-02,22:00:00,880,901,870,897.5,1\n^SPX,2030-01-02,22:00:00,5100,5120,5080,5110.2,0\n^DJI,2030-01-02,22:00:00,39000,39200,38800,38950,0\n",
+      );
+    if (url.includes("coingecko"))
+      return Promise.resolve(
+        JSON.stringify({
+          bitcoin: { usd: 64210.5, usd_24h_change: 1.8 },
+          ethereum: { usd: 3120.2, usd_24h_change: -0.6 },
+          solana: { usd: 148.9, usd_24h_change: 4.2 },
+        }),
+      );
+    if (url.includes("ecb.europa.eu"))
+      return Promise.resolve(
+        "<Cube><Cube time='2030-01-02'><Cube currency='USD' rate='1.0845'/><Cube currency='GBP' rate='0.8561'/><Cube currency='CZK' rate='25.12'/><Cube currency='JPY' rate='161.3'/><Cube currency='CHF' rate='0.9412'/></Cube></Cube>",
+      );
     if (url.includes("openweathermap"))
       return Promise.resolve(
         JSON.stringify({
