@@ -149,6 +149,8 @@ export function useDockActions() {
               : `Workspace "${ws.name}" applied.`,
           ),
         );
+      } else if (a.id === ACTION_IDS.focusDock) {
+        st.setKeyboardMode(true);
       } else if (a.id === ACTION_IDS.switcher) {
         st.setOpen(st.open?.kind === "switcher" ? null : { kind: "switcher" });
       } else if (a.id === ACTION_IDS.palette) {

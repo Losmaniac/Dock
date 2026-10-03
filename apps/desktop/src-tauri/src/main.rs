@@ -40,6 +40,7 @@ fn main() {
             commands::system::get_now_playing,
             commands::system::media_control,
             commands::system::register_hotkey,
+            commands::system::fetch_text,
             commands::system::get_audio,
             commands::system::set_volume,
             commands::system::set_muted,
@@ -82,8 +83,8 @@ fn main() {
                     SetWindowLongW(hwnd, GWL_EXSTYLE, (ex | WS_EX_TOOLWINDOW.0) as i32);
                 }
             }
+            // Stays hidden until the frontend sends its first geometry (see visibility.rs).
             events::start(app.handle().clone());
-            window.show()?;
             Ok(())
         })
         .build(tauri::generate_context!())

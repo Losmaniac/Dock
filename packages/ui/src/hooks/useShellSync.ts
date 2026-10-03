@@ -29,7 +29,11 @@ export function useShellSync(needsKeyboard: boolean, closeOverlay: () => void) {
   }, [platform, needsKeyboard]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeOverlay();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      closeOverlay();
+      useDock.getState().setKeyboardMode(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [closeOverlay]);

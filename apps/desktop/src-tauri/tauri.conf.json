@@ -32,14 +32,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis",
-      "msi"
-    ],
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ],
+    "targets": ["nsis", "msi"],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "publisher": "Glass Dock",
     "shortDescription": "Glassmorphism dock and window-control layer for Windows",
     "windows": {

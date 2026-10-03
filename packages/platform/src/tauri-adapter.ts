@@ -123,6 +123,7 @@ export class TauriAdapter implements PlatformAPI {
   hideThumbnails = () => invoke<void>("hide_thumbnails");
 
   // System
+  fetchText = (url: string) => invoke<string>("fetch_text", { url });
   getAutostart = () => invoke<boolean>("get_autostart");
   setAutostart = (on: boolean) => invoke<void>("set_autostart", { on });
   exportConfig = (json: string) => invoke<string>("export_config", { json });

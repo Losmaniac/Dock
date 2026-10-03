@@ -42,3 +42,28 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Static dark scrim keeps light text legible over bright wallpapers (it is not wallpaper-aware). */
+[data-theme="dark"] .glass {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.22));
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .glass {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.22));
+  }
+}
+
+/* Windows high contrast: use system colors, drop translucency. */
+@media (forced-colors: active) {
+  .glass,
+  .panel {
+    background: Canvas;
+    color: CanvasText;
+    border: 2px solid CanvasText;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  button:focus-visible {
+    outline: 3px solid Highlight;
+  }
+}

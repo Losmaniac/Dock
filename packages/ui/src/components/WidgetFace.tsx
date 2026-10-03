@@ -1,4 +1,5 @@
 import { BatteryCharging, BatteryFull, Music, Pause, Volume2, VolumeX } from "lucide-react";
+import { useNextEvent, useWeather } from "../hooks/useIntegrations";
 import { useAudio, useBattery, useNowPlaying, useSystemStats } from "../hooks/useInfoFeeds";
 import type { WidgetKind } from "../lib/overlay";
 import { ClockWidget } from "./ClockWidget";
@@ -9,6 +10,8 @@ export const WIDGET_LABEL: Record<WidgetKind, string> = {
   battery: "Battery",
   "now-playing": "Now playing",
   volume: "Volume",
+  calendar: "Next event",
+  weather: "Weather",
 };
 
 const pct = (n: number) => `${Math.round(n)}%`;
@@ -26,6 +29,10 @@ export function WidgetFace({ widget, active }: { widget: WidgetKind; active: boo
       return <MediaFace active={active} />;
     case "volume":
       return <VolumeFace active={active} />;
+    case "calendar":
+      return <CalendarFace active={active} />;
+    case "weather":
+      return <WeatherFace active={active} />;
   }
 }
 
@@ -64,6 +71,41 @@ function VolumeFace({ active }: { active: boolean }) {
     <span className="flex flex-col items-center text-sm font-semibold tabular-nums">
       {a.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       {Math.round(a.volume * 100)}
+    </span>
+  );
+}
+
+const hhmm = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: false,
+});
+const day = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+
+function CalendarFace({ active }: { active: boolean }) {
+  const { data, configured, error } = useNextEvent(active);
+  if (!configured) return <span className="text-[10px] opacity-70">Set ICS URL</span>;
+  if (error) return <span className="text-[10px] text-red-300">Error</span>;
+  if (!data) return <span className="text-[11px] opacity-70">No events</span>;
+  return (
+    <span className="flex flex-col items-center text-[10px] leading-tight">
+      <span className="text-sm font-semibold tabular-nums">
+        {data.allDay ? day.format(data.start) : hhmm.format(data.start)}
+      </span>
+      <span className="max-w-full truncate opacity-80">{data.title}</span>
+    </span>
+  );
+}
+
+function WeatherFace({ active }: { active: boolean }) {
+  const { data, configured, error } = useWeather(active);
+  if (!configured) return <span className="text-[10px] opacity-70">Set city + key</span>;
+  if (error) return <span className="text-[10px] text-red-300">Error</span>;
+  if (!data) return <span className="text-[11px] opacity-70">…</span>;
+  return (
+    <span className="flex flex-col items-center text-[10px] leading-tight">
+      <span className="text-sm font-semibold tabular-nums">{Math.round(data.tempC)}°C</span>
+      <span className="max-w-full truncate opacity-80">{data.description}</span>
     </span>
   );
 }

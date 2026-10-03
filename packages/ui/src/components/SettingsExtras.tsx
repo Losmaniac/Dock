@@ -37,6 +37,55 @@ export function MonitorRows() {
 
 const WIDGETS = Object.keys(WIDGET_LABEL) as WidgetKind[];
 
+export function IntegrationRows() {
+  const cfg = useDock((s) => s.config.integrations);
+  const edit = useDock((s) => s.edit);
+  const field = (
+    label: string,
+    value: string,
+    set: (v: string) => void,
+    placeholder: string,
+    wide = false,
+  ) => (
+    <Row label={label}>
+      <AccelInput
+        label={label}
+        value={value}
+        onCommit={set}
+        placeholder={placeholder}
+        wide={wide}
+      />
+    </Row>
+  );
+  return (
+    <Section title="Online widgets (opt-in, network)">
+      {field(
+        "Calendar ICS link",
+        cfg.calendarUrl,
+        (v) => edit((d) => void (d.integrations.calendarUrl = v)),
+        "https://…/basic.ics",
+        true,
+      )}
+      {field(
+        "Weather city",
+        cfg.weatherCity,
+        (v) => edit((d) => void (d.integrations.weatherCity = v)),
+        "Prague",
+      )}
+      {field(
+        "OpenWeatherMap key",
+        cfg.weatherKey,
+        (v) => edit((d) => void (d.integrations.weatherKey = v)),
+        "api key",
+      )}
+      <p className="text-xs opacity-60">
+        Nothing is requested until a value is set and the widget is on the dock. The key is stored
+        in your local config in plain text.
+      </p>
+    </Section>
+  );
+}
+
 export function WidgetRows() {
   const items = useDock((s) => s.config.items);
   const toggle = useDock((s) => s.toggleWidget);
@@ -59,10 +108,14 @@ export function AccelInput({
   value,
   onCommit,
   label,
+  placeholder = "none",
+  wide = false,
 }: {
   value: string;
   onCommit: (v: string) => void;
   label: string;
+  placeholder?: string;
+  wide?: boolean;
 }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -70,11 +123,11 @@ export function AccelInput({
     <input
       aria-label={label}
       value={text}
-      placeholder="none"
+      placeholder={placeholder}
       onChange={(e) => setText(e.target.value)}
       onBlur={() => text !== value && onCommit(text.trim())}
       onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-      className="w-40 rounded-lg bg-white/15 px-2 py-1 text-sm outline-none"
+      className={`${wide ? "w-56" : "w-40"} rounded-lg bg-white/15 px-2 py-1 text-sm outline-none`}
     />
   );
 }

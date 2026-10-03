@@ -1,5 +1,5 @@
 import { useMotionValue } from "framer-motion";
-import { useCallback, useMemo, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import type { DockPosition } from "@glass-dock/shared";
 import { buildEntries } from "../lib/entries";
 import { isHorizontal } from "../lib/geometry";
@@ -50,7 +50,14 @@ export function Dock() {
   useHotkeys(actions.runAction);
 
   useEntryIcons(pinned, running);
-  useShellSync(needsKeyboard(open), closeOverlay);
+  const keyboardMode = useDock((s) => s.keyboardMode);
+  useShellSync(needsKeyboard(open, keyboardMode), closeOverlay);
+  const { enter, leave } = geo;
+  useEffect(() => {
+    if (!keyboardMode) return leave();
+    enter(); // keep the dock revealed and roomy for tooltips while navigating by keyboard
+    navRef.current?.querySelector<HTMLElement>("button")?.focus();
+  }, [keyboardMode, enter, leave]);
 
   if (!ready) return null;
   const across = horizontal ? geo.nav.h : geo.nav.w;
@@ -63,6 +70,7 @@ export function Dock() {
     >
       <div className="relative">
         <DockBar
+          onBlurOut={() => useDock.getState().setKeyboardMode(false)}
           onHover={(entry, center) => {
             const nav = navRef.current?.getBoundingClientRect();
             if (!nav || center === null) return pv.hover(entry, null);

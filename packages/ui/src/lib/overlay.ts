@@ -15,5 +15,5 @@ export type Open =
   | { kind: "stack"; item: Extract<DockItem, { type: "folder" }> }
   | { kind: "props"; entry: AppEntry };
 
-export const needsKeyboard = (o: Open | null) =>
-  o?.kind === "settings" || o?.kind === "palette" || o?.kind === "switcher";
+export const needsKeyboard = (o: Open | null, keyboardMode = false) =>
+  keyboardMode || o?.kind === "settings" || o?.kind === "palette" || o?.kind === "switcher";

@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { useDock } from "../store/dockStore";
 import { Color, Row, Section, Select, Slider, Toggle } from "./controls";
 import { DataRows, PresetRows } from "./SettingsData";
-import { HotkeyRows, MonitorRows, WidgetRows } from "./SettingsExtras";
+import { HotkeyRows, IntegrationRows, MonitorRows, WidgetRows } from "./SettingsExtras";
 import { WorkspaceRows } from "./SettingsWorkspaces";
 
 export const SETTINGS_SIZE = { w: 440, h: 480 };
@@ -165,6 +165,7 @@ export function SettingsPanel({
         </Section>
         <PresetRows />
         <WidgetRows />
+        <IntegrationRows />
         <WorkspaceRows run={run} />
         <HotkeyRows />
         <DataRows />

@@ -7,12 +7,12 @@ describe("hotkeys", () => {
     const d = desiredHotkeys(defaultConfig().hotkeys);
     expect(d["toggle-dock"]).toBe("Ctrl+Alt+D");
     expect(d["jump:9"]).toBe("Ctrl+Alt+9");
-    expect(Object.keys(d)).toHaveLength(12);
+    expect(Object.keys(d)).toHaveLength(13);
   });
   it("skips disabled entries", () => {
     const cfg = defaultConfig().hotkeys;
     const d = desiredHotkeys({ ...cfg, jumpModifier: "", toggleDock: "" });
-    expect(Object.keys(d)).toEqual(["command-palette", "window-switcher"]);
+    expect(Object.keys(d)).toEqual(["command-palette", "window-switcher", "focus-dock"]);
   });
   it("includes workspace hotkeys", () => {
     const ws = [

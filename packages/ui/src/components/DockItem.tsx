@@ -1,4 +1,4 @@
-import { motion, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { motion, useReducedMotion, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import type { DockPosition } from "@glass-dock/shared";
 import { magnifyScale } from "../lib/magnify";
@@ -49,11 +49,23 @@ function tooltipStyle(p: DockPosition, offset: number): CSSProperties {
 export function DockItem(p: DockItemProps) {
   const ref = useRef<HTMLButtonElement>(null);
   const horizontal = isHorizontal(p.position);
+  const reduced = useReducedMotion();
+  const max = reduced ? 1 : p.magnification;
+  // The item's center is measured once when the pointer enters the dock, not on every move:
+  // reading layout 60 times a second per item would force reflows. Layout does not change
+  // while magnifying (only transforms do), so the cached value stays valid until the pointer leaves.
+  const center = useRef<number | null>(null);
   const scale = useTransform(p.pointer, (v) => {
-    const b = ref.current?.getBoundingClientRect();
-    if (!b || !Number.isFinite(v)) return 1;
-    const center = horizontal ? b.left + b.width / 2 : b.top + b.height / 2;
-    return magnifyScale(v - center, p.magnification, RADIUS);
+    if (!Number.isFinite(v)) {
+      center.current = null;
+      return 1;
+    }
+    if (center.current === null) {
+      const b = ref.current?.getBoundingClientRect();
+      if (!b) return 1;
+      center.current = horizontal ? b.left + b.width / 2 : b.top + b.height / 2;
+    }
+    return magnifyScale(v - center.current, max, RADIUS);
   });
   const smooth = useSpring(scale, { stiffness: 400, damping: 30, mass: 0.4 });
   const lit = p.running ? (p.focused ? "bg-accent" : "bg-white/80") : "bg-transparent";
@@ -70,7 +82,7 @@ export function DockItem(p: DockItemProps) {
     >
       <span
         style={tooltipStyle(p.position, p.size * (p.magnification - 1) + 8)}
-        className="panel pointer-events-none absolute z-10 whitespace-nowrap px-2 py-1 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+        className="panel pointer-events-none absolute z-10 whitespace-nowrap px-2 py-1 text-xs opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       >
         {p.label}
       </span>
@@ -80,6 +92,12 @@ export function DockItem(p: DockItemProps) {
         aria-label={p.label}
         onClick={p.onClick}
         onAuxClick={(e) => e.button === 1 && p.onAux?.()}
+        onKeyDown={(e) => {
+          if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+            e.preventDefault();
+            p.onContext?.();
+          }
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();

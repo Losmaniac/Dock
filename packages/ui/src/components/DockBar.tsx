@@ -29,6 +29,8 @@ interface Props {
   removeItem: (id: string) => void;
   openFolder: (path: string) => void;
   onHover: (entry: AppEntry, center: number | null) => void;
+  /** Keyboard focus left the dock. */
+  onBlurOut: () => void;
 }
 
 const HIDE = { bottom: { y: 160 }, top: { y: -160 }, left: { x: -160 }, right: { x: 160 } };
@@ -112,7 +114,27 @@ export const DockBar = forwardRef<HTMLElement, Props>(function DockBar(p, ref) {
   return (
     <motion.nav
       ref={ref}
+      role="toolbar"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) p.onBlurOut();
+      }}
       aria-label="Dock"
+      aria-orientation={horizontal ? "horizontal" : "vertical"}
+      onKeyDown={(e) => {
+        const next = horizontal ? "ArrowRight" : "ArrowDown";
+        const prev = horizontal ? "ArrowLeft" : "ArrowUp";
+        if (![next, prev, "Home", "End"].includes(e.key)) return;
+        const items = [...e.currentTarget.querySelectorAll<HTMLElement>("button")];
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        const target =
+          e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? items.length - 1
+              : (i + (e.key === next ? 1 : -1) + items.length) % items.length;
+        e.preventDefault();
+        items[target]?.focus();
+      }}
       animate={p.hidden ? HIDE[dock.position] : { x: 0, y: 0 }}
       transition={{ type: "spring", stiffness: 380, damping: 36 }}
       className={`glass flex items-center gap-2 p-2 ${dir}`}

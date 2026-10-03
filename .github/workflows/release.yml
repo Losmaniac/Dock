@@ -4,6 +4,9 @@ on:
 jobs:
   installer:
     runs-on: windows-latest
+    env:
+      WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -13,8 +16,28 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: apps/desktop/src-tauri }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @glass-dock/desktop tauri build
-      - name: Report installer sizes (budget: under 15 MB)
+      # Signing is optional: without the secrets the installers are built unsigned.
+      - name: Import code-signing certificate
+        id: cert
+        if: ${{ env.WINDOWS_CERTIFICATE != '' }}
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP/cert.pfx", $bytes)
+          $pw = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath "$env:RUNNER_TEMP/cert.pfx" -CertStoreLocation Cert:\CurrentUser\My -Password $pw
+          "thumbprint=$($cert.Thumbprint)" >> $env:GITHUB_OUTPUT
+      - name: Build installers (signed when a certificate was imported)
+        shell: pwsh
+        run: |
+          $thumb = "${{ steps.cert.outputs.thumbprint }}"
+          if ($thumb) {
+            $cfg = '{"bundle":{"windows":{"certificateThumbprint":"' + $thumb + '","digestAlgorithm":"sha256","timestampUrl":"http://timestamp.digicert.com"}}}'
+            pnpm --filter @glass-dock/desktop tauri build --config $cfg
+          } else {
+            pnpm --filter @glass-dock/desktop tauri build
+          }
+      - name: "Report installer sizes (budget: under 15 MB)"
         shell: pwsh
         run: |
           Get-ChildItem apps/desktop/src-tauri/target/release/bundle -Recurse -Include *.exe,*.msi |

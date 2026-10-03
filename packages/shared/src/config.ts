@@ -29,7 +29,15 @@ export const dockItemSchema = z.discriminatedUnion("type", [
   z.object({
     id: z.string().min(1),
     type: z.literal("widget"),
-    widget: z.enum(["clock", "system-stats", "battery", "now-playing", "volume"]),
+    widget: z.enum([
+      "clock",
+      "system-stats",
+      "battery",
+      "now-playing",
+      "volume",
+      "calendar",
+      "weather",
+    ]),
   }),
   z.object({ id: z.string().min(1), type: z.literal("separator") }),
 ]);
@@ -103,6 +111,16 @@ export const dockConfigSchema = z.object({
       solid: z.boolean().default(false),
     })
     .default({}),
+  /** Opt-in network features. Nothing is fetched while these are empty. */
+  integrations: z
+    .object({
+      /** Read-only ICS feed (https). */
+      calendarUrl: z.string().default(""),
+      weatherCity: z.string().default(""),
+      /** OpenWeatherMap key. Stored in the local config file in plain text. */
+      weatherKey: z.string().default(""),
+    })
+    .default({}),
   items: z.array(dockItemSchema).default([]),
   hotkeys: z
     .object({
@@ -112,6 +130,8 @@ export const dockConfigSchema = z.object({
       jumpModifier: z.string().default("Ctrl+Alt"),
       /** Window switcher overlay. Alt+Tab itself cannot be taken over by a global hotkey. */
       switcher: z.string().default("Ctrl+Alt+W"),
+      /** Moves keyboard focus into the dock so it can be used without a mouse. */
+      focusDock: z.string().default("Ctrl+Alt+Home"),
       /** Snap layout -> accelerator, for example `{ "left-half": "Ctrl+Alt+Left" }`. */
       snap: z.record(z.string()).default({}),
     })

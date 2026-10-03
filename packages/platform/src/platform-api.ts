@@ -68,6 +68,8 @@ export interface PlatformAPI {
   hideThumbnails(): Promise<void>;
 
   // System
+  /** The only network call: https, public hosts only. Used by opt-in widgets. */
+  fetchText(url: string): Promise<string>;
   getAutostart(): Promise<boolean>;
   setAutostart(on: boolean): Promise<void>;
   /** Persist an exported config; resolves to a human-readable location. */

@@ -254,6 +254,24 @@ export class MockAdapter implements PlatformAPI {
   showThumbnail = (_hwnd: string, _rect: PixelRect) => Promise.resolve();
   hideThumbnails = () => Promise.resolve();
 
+  /** Web demo: canned feeds, so no real request is made. */
+  fetchText(url: string): Promise<string> {
+    if (url.includes("openweathermap"))
+      return Promise.resolve(
+        JSON.stringify({
+          name: "Demo City",
+          main: { temp: 17.4 },
+          weather: [{ description: "light rain" }],
+        }),
+      );
+    const t = new Date(Date.now() + 90 * 60_000);
+    const p = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${t.getUTCFullYear()}${p(t.getUTCMonth() + 1)}${p(t.getUTCDate())}T${p(t.getUTCHours())}${p(t.getUTCMinutes())}00Z`;
+    return Promise.resolve(
+      `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:${stamp}\r\nSUMMARY:Design review (demo)\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+    );
+  }
+
   private autostart = false;
   getAutostart = () => Promise.resolve(this.autostart);
   setAutostart = (on: boolean) => {

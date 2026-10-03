@@ -1,8 +1,8 @@
 use dock_core::layout::{dock_rect, DockMode, Position};
 use serde::Deserialize;
-use tauri::WebviewWindow;
+use tauri::{Manager, WebviewWindow};
 use windows::Win32::Foundation::HWND;
-use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_SHOWWINDOW};
+use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE};
 
 use crate::native::{appbar, monitors};
 
@@ -102,8 +102,9 @@ pub fn set_dock_geometry(window: WebviewWindow, geometry: Geometry) -> DockResul
     let r = dock_rect(area, geometry.position, px(geometry.length), px(geometry.thickness), px(geometry.margin), geometry.mode);
     // SAFETY: hwnd belongs to this process's live main window.
     unsafe {
-        SetWindowPos(hwnd, Some(HWND_TOPMOST), r.x, r.y, r.w, r.h, SWP_NOACTIVATE | SWP_SHOWWINDOW)?;
+        SetWindowPos(hwnd, Some(HWND_TOPMOST), r.x, r.y, r.w, r.h, SWP_NOACTIVATE)?;
     }
+    crate::visibility::mark_placed(window.app_handle());
     Ok(())
 }
 

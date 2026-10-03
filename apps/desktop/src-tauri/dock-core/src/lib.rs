@@ -2,4 +2,5 @@
 pub mod cfgfile;
 pub mod iconkey;
 pub mod layout;
+pub mod net;
 pub mod validate;

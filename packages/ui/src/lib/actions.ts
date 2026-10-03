@@ -23,6 +23,7 @@ export const ACTION_IDS = {
   settings: "open-settings",
   toggleAutoHide: "toggle-autohide",
   switcher: "window-switcher",
+  focusDock: "focus-dock",
 } as const;
 
 export const snapActionId = (l: SnapLayout) => `snap:${l}`;

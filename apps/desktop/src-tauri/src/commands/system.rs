@@ -81,3 +81,33 @@ pub fn set_autostart(app: AppHandle, on: bool) -> DockResult<()> {
     let r = if on { al.enable() } else { al.disable() };
     r.map_err(|e| crate::error::DockError::OsError(e.to_string()))
 }
+
+/// The only network call in the app. Used by the opt-in calendar and weather widgets.
+/// HTTPS, public hosts only, 10 s timeout, 1 MB cap.
+#[tauri::command(async)]
+pub fn fetch_text(url: String) -> DockResult<String> {
+    use std::io::Read;
+    use std::time::Duration;
+    if !dock_core::net::is_public_https_url(&url) {
+        return Err(crate::error::DockError::InvalidArgument(
+            "Only public https:// addresses can be fetched.".into(),
+        ));
+    }
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(10)))
+        .max_redirects(3)
+        .https_only(true)
+        .build()
+        .into();
+    let mut resp = agent
+        .get(&url)
+        .call()
+        .map_err(|e| crate::error::DockError::OsError(format!("request failed: {e}")))?;
+    let mut body = String::new();
+    resp.body_mut()
+        .as_reader()
+        .take(1024 * 1024)
+        .read_to_string(&mut body)
+        .map_err(|e| crate::error::DockError::OsError(format!("could not read response: {e}")))?;
+    Ok(body)
+}

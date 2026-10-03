@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface MenuAction {
   label: string;
@@ -29,9 +29,31 @@ export function ContextMenu({
 }) {
   const [parent, setParent] = useState<MenuAction | null>(null);
   const list = parent?.children ?? actions;
+  const root = useRef<HTMLDivElement>(null);
+  // Focus the first row whenever the list changes so arrow keys work immediately.
+  useEffect(
+    () => root.current?.querySelector<HTMLElement>("[role=menuitem]:not(:disabled)")?.focus(),
+    [parent],
+  );
 
   return (
-    <div role="menu" aria-label={title} className="panel w-56 p-1.5 text-sm">
+    <div
+      ref={root}
+      role="menu"
+      aria-label={title}
+      className="panel w-56 p-1.5 text-sm"
+      onKeyDown={(e) => {
+        const rows = [
+          ...(root.current?.querySelectorAll<HTMLElement>("[role=menuitem]:not(:disabled)") ?? []),
+        ];
+        const i = rows.indexOf(document.activeElement as HTMLElement);
+        if (e.key === "ArrowDown") rows[(i + 1) % rows.length]?.focus();
+        else if (e.key === "ArrowUp") rows[(i - 1 + rows.length) % rows.length]?.focus();
+        else if (e.key === "ArrowLeft" && parent) setParent(null);
+        else return;
+        e.preventDefault();
+      }}
+    >
       <div className="truncate px-2.5 py-1.5 text-xs opacity-60">
         {parent ? `‹ ${parent.label}` : title}
       </div>

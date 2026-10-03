@@ -16,6 +16,9 @@ interface DockState {
   windows: WindowInfo[];
   monitors: MonitorInfo[];
   open: Open | null;
+  /** Keyboard navigation inside the dock; makes the window focusable while true. */
+  keyboardMode: boolean;
+  setKeyboardMode(on: boolean): void;
   setOpen(o: Open | null): void;
   toggleWidget(widget: WidgetKind, on: boolean): void;
   icons: Record<string, string>;
@@ -58,6 +61,8 @@ export const useDock = create<DockState>((set, get) => {
     windows: [],
     monitors: [],
     open: null,
+    keyboardMode: false,
+    setKeyboardMode: (keyboardMode) => set({ keyboardMode }),
     setOpen: (open) => set({ open }),
     icons: {},
     toasts: [],
