@@ -6,7 +6,10 @@ import type {
   BatteryInfo,
   BlurMode,
   DockConfig,
+  DockGeometry,
   DockPosition,
+  FolderEntry,
+  PathInfo,
   IconSource,
   LaunchItem,
   MediaInfo,
@@ -144,6 +147,21 @@ export class MockAdapter implements PlatformAPI {
 
   registerHotkey = (_accelerator: string, _actionId: string) => Promise.resolve();
 
+  describePath = (path: string): Promise<PathInfo> =>
+    Promise.resolve({ kind: "file", label: path.split(/[\\/]/).pop() ?? path, path, args: [] });
+  listFolder = (_path: string): Promise<FolderEntry[]> =>
+    Promise.resolve(
+      ["Docs", "Photos", "notes.txt", "todo.md", "budget.xlsx"].map((name, i) => ({
+        name,
+        path: `C:\\Mock\\${name}`,
+        isDir: i < 2,
+      })),
+    );
+  /** The browser cannot receive OS file paths, so the web demo never fires this. */
+  onFilesDropped(_cb: (paths: string[], point: { x: number; y: number }) => void): Unsubscribe {
+    return () => {};
+  }
+
   getSystemStats(): Promise<SystemStats> {
     const t = Date.now() / 1000;
     return Promise.resolve({
@@ -165,6 +183,8 @@ export class MockAdapter implements PlatformAPI {
   setDockPosition = (_pos: DockPosition) => Promise.resolve();
   setAutoHide = (_on: boolean) => Promise.resolve();
   setBlurMode = (_mode: BlurMode) => Promise.resolve();
+  setDockGeometry = (_g: DockGeometry) => Promise.resolve();
+  setFocusable = (_on: boolean) => Promise.resolve();
 
   loadConfig = () => Promise.resolve(structuredClone(this.config));
   saveConfig(cfg: DockConfig): Promise<void> {

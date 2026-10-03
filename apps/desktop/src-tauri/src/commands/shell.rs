@@ -1,3 +1,4 @@
+use dock_core::layout::{dock_rect, DockMode, Position};
 use serde::Deserialize;
 use tauri::WebviewWindow;
 
@@ -24,7 +25,6 @@ pub fn fallback_chain(requested: BlurMode) -> &'static [BlurMode] {
 }
 
 /// Applies native blur behind the (transparent) window. Returns the mode that took effect.
-#[cfg(windows)]
 pub fn apply_blur(window: &WebviewWindow, requested: BlurMode) -> DockResult<Option<BlurMode>> {
     use window_vibrancy::{
         apply_acrylic, apply_blur as vibrancy_blur, apply_mica, clear_acrylic, clear_blur,
@@ -50,16 +50,67 @@ pub fn apply_blur(window: &WebviewWindow, requested: BlurMode) -> DockResult<Opt
     Ok(None)
 }
 
-#[cfg(not(windows))]
-pub fn apply_blur(_window: &WebviewWindow, _requested: BlurMode) -> DockResult<Option<BlurMode>> {
-    Err(crate::error::DockError::NotSupported(
-        "native blur is only available on Windows".into(),
-    ))
-}
-
 #[tauri::command]
 pub fn set_blur_mode(window: WebviewWindow, mode: BlurMode) -> DockResult<()> {
     apply_blur(&window, mode).map(|_| ())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Geometry {
+    pub position: Position,
+    pub mode: DockMode,
+    /// Logical (CSS) pixels measured by the frontend.
+    pub length: f64,
+    pub thickness: f64,
+    /// Gap to the screen edge (logical px); 0 for auto-hide so the pointer can reach the bar.
+    pub margin: f64,
+}
+
+/// Single atomic SetWindowPos so the dock never visibly jumps between size and position.
+#[tauri::command]
+pub fn set_dock_geometry(window: WebviewWindow, geometry: Geometry) -> DockResult<()> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    };
+    let scale = window.scale_factor().unwrap_or(1.0);
+    let area = crate::native::monitors::primary_work_area();
+    let r = dock_rect(
+        area,
+        geometry.position,
+        (geometry.length * scale).round() as i32,
+        (geometry.thickness * scale).round() as i32,
+        (geometry.margin * scale).round() as i32,
+        geometry.mode,
+    );
+    let hwnd = HWND(window.hwnd()?.0 as *mut std::ffi::c_void);
+    // SAFETY: hwnd belongs to this process's live main window.
+    unsafe {
+        SetWindowPos(hwnd, Some(HWND_TOPMOST), r.x, r.y, r.w, r.h, SWP_NOACTIVATE | SWP_SHOWWINDOW)?;
+    }
+    Ok(())
+}
+
+/// The dock window must not steal focus from the app being controlled, except while a text
+/// field (command palette) needs the keyboard.
+#[tauri::command]
+pub fn set_dock_focusable(window: WebviewWindow, focusable: bool) -> DockResult<()> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongW, SetWindowLongW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+    };
+    let hwnd = HWND(window.hwnd()?.0 as *mut std::ffi::c_void);
+    // SAFETY: read-modify-write of this process's own window style.
+    unsafe {
+        let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+        let ex = if focusable { ex & !WS_EX_NOACTIVATE.0 } else { ex | WS_EX_NOACTIVATE.0 };
+        SetWindowLongW(hwnd, GWL_EXSTYLE, ex as i32);
+    }
+    if focusable {
+        let _ = window.set_focus();
+    }
+    Ok(())
 }
 
 #[cfg(test)]

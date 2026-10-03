@@ -15,6 +15,8 @@ export interface WindowInfo {
   title: string;
   processName: string;
   processPath: string;
+  /** Set for Store apps hosted by ApplicationFrameHost; identifies the real app. */
+  aumid?: string | null;
   focused: boolean;
   minimized: boolean;
   /** Elevated windows cannot be controlled by a non-elevated dock. */
@@ -36,7 +38,8 @@ export type LaunchItem =
   | { type: "app"; path: string; args?: string[] }
   | { type: "folder"; path: string }
   | { type: "file"; path: string }
-  | { type: "url"; url: string };
+  | { type: "url"; url: string }
+  | { type: "uwp"; aumid: string };
 
 export type IconSource = { path: string } | { aumid: string };
 
@@ -57,6 +60,31 @@ export interface MediaInfo {
   title: string;
   artist: string;
   playing: boolean;
+}
+
+export interface PathInfo {
+  kind: "app" | "folder" | "file";
+  label: string;
+  path: string;
+  args: string[];
+}
+
+export interface FolderEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+}
+
+export type DockMode = "hidden" | "rest" | "active";
+
+/** Sizes in CSS pixels, measured by the frontend. */
+export interface DockGeometry {
+  position: DockPosition;
+  mode: DockMode;
+  length: number;
+  thickness: number;
+  /** Gap to the screen edge; 0 when auto-hide is on. */
+  margin: number;
 }
 
 export type DockPosition = "bottom" | "top" | "left" | "right";

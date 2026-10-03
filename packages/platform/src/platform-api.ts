@@ -2,7 +2,10 @@ import type {
   BatteryInfo,
   BlurMode,
   DockConfig,
+  DockGeometry,
   DockPosition,
+  FolderEntry,
+  PathInfo,
   IconSource,
   LaunchItem,
   MediaInfo,
@@ -29,6 +32,11 @@ export interface PlatformAPI {
   launch(item: LaunchItem): Promise<void>;
   getIcon(source: IconSource): Promise<string>; // data URL (PNG)
   registerHotkey(accelerator: string, actionId: string): Promise<void>;
+  /** Classify a dropped path and resolve .lnk shortcuts. */
+  describePath(path: string): Promise<PathInfo>;
+  listFolder(path: string): Promise<FolderEntry[]>;
+  /** Files dropped on the dock window; `point` is in CSS pixels. */
+  onFilesDropped(cb: (paths: string[], point: { x: number; y: number }) => void): Unsubscribe;
 
   // Info
   getSystemStats(): Promise<SystemStats>;
@@ -40,6 +48,10 @@ export interface PlatformAPI {
   setDockPosition(pos: DockPosition): Promise<void>;
   setAutoHide(on: boolean): Promise<void>;
   setBlurMode(mode: BlurMode): Promise<void>;
+  /** Resize and place the dock window. UI computes sizes; Rust owns monitor math. */
+  setDockGeometry(geometry: DockGeometry): Promise<void>;
+  /** The dock must not take focus, except while a text field needs the keyboard. */
+  setFocusable(on: boolean): Promise<void>;
 
   // Config
   loadConfig(): Promise<DockConfig>;

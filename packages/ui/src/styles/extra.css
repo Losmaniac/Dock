@@ -1,0 +1,44 @@
+/* theme tokens that depend on light/dark */
+[data-theme="light"] {
+  --text: #111;
+  --panel-bg: rgba(250, 250, 252, 0.88);
+  --panel-text: #111;
+}
+[data-theme="dark"] {
+  --text: #fff;
+  --panel-bg: rgba(28, 28, 32, 0.88);
+  --panel-text: #fff;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --text: #111;
+    --panel-bg: rgba(250, 250, 252, 0.88);
+    --panel-text: #111;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --text: #fff;
+    --panel-bg: rgba(28, 28, 32, 0.88);
+    --panel-text: #fff;
+  }
+}
+
+.panel {
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+}
+.solid .panel {
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

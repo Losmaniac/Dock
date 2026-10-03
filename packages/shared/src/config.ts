@@ -11,6 +11,8 @@ export const dockItemSchema = z.discriminatedUnion("type", [
     label: z.string(),
     path: z.string().min(1),
     args: z.array(z.string()).default([]),
+    /** Store apps: launched and matched by AppUserModelID instead of a path. */
+    aumid: z.string().optional(),
   }),
   z.object({
     id: z.string().min(1),
@@ -38,6 +40,7 @@ export const dockConfigSchema = z.object({
     .object({
       position: z.enum(["bottom", "top", "left", "right"]).default("bottom"),
       autoHide: z.boolean().default(false),
+      autoHideDelay: z.number().min(0).max(2000).default(150),
       reserveSpace: z.boolean().default(false),
       iconSize: z.number().min(32).max(96).default(56),
       magnification: z.number().min(1).max(1.8).default(1.6),
@@ -53,6 +56,8 @@ export const dockConfigSchema = z.object({
       tintOpacity: z.number().min(0).max(1).default(0.12),
       radius: z.number().min(0).max(40).default(22),
       accent: hexColor.default("#4f8cff"),
+      /** "Solid" fallback: no transparency (low-end GPUs, accessibility). */
+      solid: z.boolean().default(false),
     })
     .default({}),
   items: z.array(dockItemSchema).default([]),

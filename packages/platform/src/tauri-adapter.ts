@@ -1,6 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DockConfig, BlurMode, DockError, Unsubscribe } from "@glass-dock/shared";
-import { defaultConfig } from "@glass-dock/shared";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import type {
+  BlurMode,
+  DockConfig,
+  DockError,
+  DockGeometry,
+  DockPosition,
+  FolderEntry,
+  IconSource,
+  LaunchItem,
+  PathInfo,
+  Unsubscribe,
+  WindowInfo,
+} from "@glass-dock/shared";
+import { loadConfigFromRaw } from "./config-io";
 import { MockAdapter } from "./mock-adapter";
 import type { PlatformAPI } from "./platform-api";
 
@@ -11,44 +25,80 @@ function notImplemented(what: string, phase: number): never {
 
 const later = (what: string, phase: number) => () => Promise.reject(notImplemented(what, phase));
 
+/** Subscribe to a Tauri event; returns a synchronous unsubscribe even though listen() is async. */
+function subscribe<T>(event: string, cb: (payload: T) => void): Unsubscribe {
+  let off: (() => void) | undefined;
+  let cancelled = false;
+  void listen<T>(event, (e) => cb(e.payload)).then((fn) => {
+    if (cancelled) fn();
+    else off = fn;
+  });
+  return () => {
+    cancelled = true;
+    off?.();
+  };
+}
+
 /**
- * Phase 0: only `setBlurMode` is wired to Rust. Everything else rejects with a typed
- * `not_implemented` error so nothing silently pretends to work. Real window/icon data is
- * Phase 1, so the shell reuses the labeled mock data for rendering until then.
+ * Phase 1 wires windows, launcher, icons, config and window geometry to Rust. Methods that
+ * belong to later phases reject with a typed `not_implemented` error naming their phase.
+ * The only mock use left is the labeled data for the info widgets until Phase 2.
  */
 export class TauriAdapter implements PlatformAPI {
-  private readonly fallback = new MockAdapter();
+  private readonly info = new MockAdapter();
 
-  // Phase 1+ (native). Rendering data is delegated to the mock until the Rust side exists.
-  listWindows = () => this.fallback.listWindows();
-  onWindowsChanged = (cb: Parameters<PlatformAPI["onWindowsChanged"]>[0]): Unsubscribe =>
-    this.fallback.onWindowsChanged(cb);
-  getIcon = (s: Parameters<PlatformAPI["getIcon"]>[0]) => this.fallback.getIcon(s);
-  loadConfig = (): Promise<DockConfig> => this.fallback.loadConfig().catch(() => defaultConfig());
-  saveConfig = (c: DockConfig) => this.fallback.saveConfig(c);
-  focusWindow = later("focusWindow", 1);
-  minimizeWindow = later("minimizeWindow", 1);
-  closeWindow = later("closeWindow", 1);
-  launch = later("launch", 1);
-  setDockPosition = later("setDockPosition", 1);
-  setAutoHide = later("setAutoHide", 1);
-
-  // Phase 2+
+  // Windows
+  listWindows = () => invoke<WindowInfo[]>("list_windows");
+  focusWindow = (hwnd: string) => invoke<void>("focus_window", { hwnd });
+  minimizeWindow = (hwnd: string) => invoke<void>("minimize_window", { hwnd });
+  closeWindow = (hwnd: string) => invoke<void>("close_window", { hwnd });
+  onWindowsChanged = (cb: (w: WindowInfo[]) => void) =>
+    subscribe<WindowInfo[]>("windows-changed", cb);
   snapWindow = later("snapWindow", 2);
   moveWindowToMonitor = later("moveWindowToMonitor", 2);
   setAlwaysOnTop = later("setAlwaysOnTop", 2);
   setWindowOpacity = later("setWindowOpacity", 2);
-  registerHotkey = later("registerHotkey", 2);
-  getSystemStats = later("getSystemStats", 2);
-  getBattery = later("getBattery", 2);
-  getNowPlaying = later("getNowPlaying", 2);
-  onNowPlaying = (cb: Parameters<PlatformAPI["onNowPlaying"]>[0]): Unsubscribe => {
-    cb(null);
-    return () => {};
-  };
 
-  // Implemented in Phase 0
-  setBlurMode(mode: BlurMode): Promise<void> {
-    return invoke("set_blur_mode", { mode });
+  // Launcher
+  launch = (item: LaunchItem) => invoke<void>("launch", { item });
+  getIcon = (source: IconSource) => invoke<string>("get_icon", { source });
+  describePath = (path: string) => invoke<PathInfo>("describe_path", { path });
+  listFolder = (path: string): Promise<FolderEntry[]> => invoke("list_folder", { path });
+  registerHotkey = later("registerHotkey", 2);
+  onFilesDropped(cb: (paths: string[], point: { x: number; y: number }) => void): Unsubscribe {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void getCurrentWebview()
+      .onDragDropEvent((e) => {
+        if (e.payload.type !== "drop") return;
+        const r = window.devicePixelRatio || 1;
+        cb(e.payload.paths, { x: e.payload.position.x / r, y: e.payload.position.y / r });
+      })
+      .then((fn) => (cancelled ? fn() : (off = fn)));
+    return () => {
+      cancelled = true;
+      off?.();
+    };
   }
+
+  // Info (Phase 2: real data). Labeled mock until then.
+  getSystemStats = () => this.info.getSystemStats();
+  getBattery = () => this.info.getBattery();
+  getNowPlaying = () => this.info.getNowPlaying();
+  onNowPlaying = (cb: Parameters<PlatformAPI["onNowPlaying"]>[0]) => this.info.onNowPlaying(cb);
+
+  // Dock shell
+  setBlurMode = (mode: BlurMode) => invoke<void>("set_blur_mode", { mode });
+  setDockGeometry = (geometry: DockGeometry) => invoke<void>("set_dock_geometry", { geometry });
+  setFocusable = (focusable: boolean) => invoke<void>("set_dock_focusable", { focusable });
+  setDockPosition = (_pos: DockPosition) => Promise.resolve(); // driven by setDockGeometry
+  setAutoHide = (_on: boolean) => Promise.resolve(); // driven by setDockGeometry
+
+  // Config
+  loadConfig = async (): Promise<DockConfig> =>
+    loadConfigFromRaw(await invoke<string | null>("load_config"), () =>
+      invoke("backup_corrupt_config"),
+    );
+  saveConfig = (cfg: DockConfig) =>
+    invoke<void>("save_config", { json: JSON.stringify(cfg, null, 2) });
 }

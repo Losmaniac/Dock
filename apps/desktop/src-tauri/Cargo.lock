@@ -644,6 +644,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dock-core"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "dom_query"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1060,12 +1068,15 @@ dependencies = [
 name = "glass-dock"
 version = "0.0.0"
 dependencies = [
+ "dock-core",
+ "png 0.18.1",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "thiserror 2.0.21",
  "window-vibrancy 0.6.0",
+ "windows",
 ]
 
 [[package]]
